@@ -100,3 +100,61 @@ export function deleteBouquet(id: string): void {
   const filtered = loadAllBouquets().filter((b) => b.id !== id);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
 }
+
+// ─── URL encode / decode (minimal payload for short shareable links) ──────────
+// Only stores what changes: flowers, wrap colour, letter text.
+// Everything else is reconstructed from defaults on decode.
+
+type UrlPayload = {
+  f: Array<[string, string, number]>; // [type, color, count]
+  w: string;                           // wrap color
+  t: string;                           // letter.to
+  m: string;                           // letter.message
+  r: string;                           // letter.from
+};
+
+export function encodeBouquetUrl(bouquet: BouquetState): string {
+  const payload: UrlPayload = {
+    f: bouquet.flowers.map((fl) => [fl.type, fl.color, fl.count]),
+    w: bouquet.wrap.color,
+    t: bouquet.letter.to,
+    m: bouquet.letter.message,
+    r: bouquet.letter.from,
+  };
+  // unescape+encodeURIComponent handles any Unicode in the message safely
+  const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+  // Use URL-safe base64 (no +, /, or = padding)
+  return b64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
+}
+
+export function decodeBouquetUrl(encoded: string, id: string): BouquetState | null {
+  try {
+    const b64 = encoded.replace(/-/g, "+").replace(/_/g, "/");
+    const json = decodeURIComponent(escape(atob(b64)));
+    const p: UrlPayload = JSON.parse(json);
+    return {
+      id,
+      artStyle: "illustrated",
+      flowers: p.f.map(([type, color, count], i) => ({
+        id: `f${i}`,
+        type,
+        color,
+        count,
+      })),
+      fillers: [],
+      displayStyle: "hand-tied",
+      wrap: { material: "kraft", foldStyle: "classic", color: p.w, embellishment: "ribbon" },
+      letter: {
+        paperColor: "#FDF6EF",
+        font: "dancing",
+        inkColor: "#2C1A0E",
+        sealColor: "#C9856A",
+        to: p.t,
+        message: p.m,
+        from: p.r,
+      },
+    };
+  } catch {
+    return null;
+  }
+}

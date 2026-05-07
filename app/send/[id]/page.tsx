@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { BouquetState, loadBouquet } from "@/lib/bouquetState";
+import { BouquetState, loadBouquet, decodeBouquetUrl } from "@/lib/bouquetState";
 import BouquetCanvas from "@/components/bouquet/BouquetCanvas";
 import LetterPreview from "@/components/letter/LetterPreview";
 
@@ -21,13 +21,8 @@ export default function RecipientPage() {
     const params = new URLSearchParams(window.location.search);
     const encoded = params.get("d");
     if (encoded) {
-      try {
-        const decoded = JSON.parse(decodeURIComponent(atob(encoded)));
-        setState(decoded as BouquetState);
-        return;
-      } catch {
-        // malformed — fall through to localStorage
-      }
+      const decoded = decodeBouquetUrl(encoded, id);
+      if (decoded) { setState(decoded); return; }
     }
 
     // Fallback: localStorage (same browser only)

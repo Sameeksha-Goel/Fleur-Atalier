@@ -3,7 +3,7 @@
 import { useState, useCallback, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import html2canvas from "html2canvas";
-import { BouquetState, defaultBouquetState, saveBouquet } from "@/lib/bouquetState";
+import { BouquetState, defaultBouquetState, saveBouquet, encodeBouquetUrl } from "@/lib/bouquetState";
 import { ArtStyle } from "@/lib/drawingUtils";
 import FlowerPicker from "@/components/editor/FlowerPicker";
 import BouquetCanvas from "@/components/bouquet/BouquetCanvas";
@@ -40,8 +40,7 @@ function ShareModal({ bouquet, shareId, onClose }: ModalProps) {
     bouquet.letter.from.trim();
 
   function copyLink() {
-    // Encode the full bouquet into the URL so it works on any device/browser
-    const encoded = btoa(encodeURIComponent(JSON.stringify(bouquet)));
+    const encoded = encodeBouquetUrl(bouquet);
     const url = `${window.location.origin}/send/${shareId}?d=${encoded}`;
     navigator.clipboard.writeText(url).then(() => {
       setCopied(true);
