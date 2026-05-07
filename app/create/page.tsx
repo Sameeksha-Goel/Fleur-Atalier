@@ -25,11 +25,10 @@ const WRAP_COLORS = [
 
 type ModalProps = {
   bouquet: BouquetState;
-  shareId: string;
   onClose: () => void;
 };
 
-function ShareModal({ bouquet, shareId, onClose }: ModalProps) {
+function ShareModal({ bouquet, onClose }: ModalProps) {
   const previewRef = useRef<HTMLDivElement>(null);
   const [copied,      setCopied]      = useState(false);
   const [downloading, setDownloading] = useState(false);
@@ -40,8 +39,7 @@ function ShareModal({ bouquet, shareId, onClose }: ModalProps) {
     bouquet.letter.from.trim();
 
   function copyLink() {
-    const encoded = encodeBouquetUrl(bouquet);
-    const url = `${window.location.origin}/send/${shareId}?d=${encoded}`;
+    const url = `${window.location.origin}/send?d=${encodeBouquetUrl(bouquet)}`;
     navigator.clipboard.writeText(url).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -247,7 +245,6 @@ export default function CreatePage() {
         {shareId && (
           <ShareModal
             bouquet={bouquet}
-            shareId={shareId}
             onClose={() => setShareId(null)}
           />
         )}
