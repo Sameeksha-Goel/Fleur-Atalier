@@ -155,24 +155,33 @@ function illustratedRose(color: string): string {
   return s;
 }
 
-// TULIP — cup shape with dark outline, strap leaves
+// TULIP — rounded egg-cup shape with big prominent leaves, matching reference
 function illustratedTulip(color: string): string {
-  const oc = darken(color, 50);
-  const li  = lighten(color, 22);
+  const oc  = darken(color, 50);
+  const li  = lighten(color, 24);
   const mid = darken(color, 5);
-  const dk  = darken(color, 18);
-  let s = illuStem(66) + illuLeaf(50, 96, 19, 245) + illuLeaf(50, 116, 16, 118);
+  const dk  = darken(color, 20);
+  const gl  = "#5a8a3c", gd = "#1b3010", gm = "#2a5018";
+  let s = illuStem(68);
 
-  // Shadow base
-  s += `<path d="M50,66 C26,62 18,34 32,14 C37,8 50,30 50,60 C50,30 63,8 68,14 C82,34 74,62 50,66 Z" fill="${dk}" stroke="${oc}" stroke-width="1.6" stroke-linejoin="round"/>`;
+  // Large prominent strap leaves (from mid-stem, like the reference)
+  s += `<path d="M50,96 C30,84 12,66 18,48 C22,38 42,54 50,80 Z" fill="${gl}" stroke="${gd}" stroke-width="1.8" stroke-linejoin="round"/>`;
+  s += `<line x1="50" y1="96" x2="20" y2="50" stroke="${gm}" stroke-width="0.9" opacity="0.7"/>`;
+  s += `<line x1="36" y1="76" x2="26" y2="63" stroke="${gm}" stroke-width="0.6" opacity="0.55"/>`;
+  s += `<path d="M50,102 C70,90 88,72 82,54 C78,44 58,60 50,86 Z" fill="${gl}" stroke="${gd}" stroke-width="1.8" stroke-linejoin="round"/>`;
+  s += `<line x1="50" y1="102" x2="80" y2="56" stroke="${gm}" stroke-width="0.9" opacity="0.7"/>`;
+  s += `<line x1="64" y1="82" x2="74" y2="69" stroke="${gm}" stroke-width="0.6" opacity="0.55"/>`;
+
+  // Full silhouette (back/dark — rounded egg-cup shape)
+  s += `<path d="M50,68 C24,64 15,40 22,20 C28,6 40,4 50,8 C60,4 72,6 78,20 C85,40 76,64 50,68 Z" fill="${dk}" stroke="${oc}" stroke-width="1.9" stroke-linejoin="round"/>`;
   // Left petal
-  s += `<path d="M50,66 C28,63 20,36 34,16 C38,10 50,32 50,62 Z" fill="${mid}" stroke="${oc}" stroke-width="1.5" stroke-linejoin="round"/>`;
+  s += `<path d="M50,68 C24,64 15,40 22,20 C28,6 40,4 50,20 Z" fill="${mid}" stroke="${oc}" stroke-width="1.6" stroke-linejoin="round"/>`;
   // Right petal
-  s += `<path d="M50,66 C72,63 80,36 66,16 C62,10 50,32 50,62 Z" fill="${mid}" stroke="${oc}" stroke-width="1.5" stroke-linejoin="round"/>`;
-  // Center petal — lightest, tallest
-  s += `<path d="M44,62 C42,30 46,13 50,13 C54,13 58,30 56,62 C54,67 46,67 44,62 Z" fill="${li}" stroke="${oc}" stroke-width="1.5" stroke-linejoin="round"/>`;
-  // Highlight
-  s += `<ellipse cx="48" cy="35" rx="3" ry="8" fill="white" opacity="0.16" transform="rotate(-8,48,35)" stroke="none"/>`;
+  s += `<path d="M50,68 C76,64 85,40 78,20 C72,6 60,4 50,20 Z" fill="${mid}" stroke="${oc}" stroke-width="1.6" stroke-linejoin="round"/>`;
+  // Center petal — lightest, front-facing
+  s += `<path d="M43,64 C40,32 44,10 50,8 C56,10 60,32 57,64 C55,70 45,70 43,64 Z" fill="${li}" stroke="${oc}" stroke-width="1.6" stroke-linejoin="round"/>`;
+  // Vertical soft highlight
+  s += `<path d="M48,60 C46,34 48,14 50,12 C52,14 52,34 51,60 Z" fill="white" opacity="0.18" stroke="none"/>`;
   return s;
 }
 
@@ -240,41 +249,54 @@ function illustratedDaisy(color: string): string {
   return s;
 }
 
-// PEONY — ruffled multi-ring petals with dark outline, yellow stamens
+// PEONY — scalloped outer ring + ruffled inner layers + yellow stamen cup, matching reference
 function illustratedPeony(color: string): string {
-  const cx = 50, cy = 42;
+  const cx = 50, cy = 40;
   const oc = darken(color, 52);
-  const c1 = lighten(color, 30);
-  const c2 = lighten(color, 14);
+  const c1 = lighten(color, 32);  // outermost — lightest
+  const c2 = lighten(color, 16);
   const c3 = color;
-  const c4 = darken(color, 18);
-  let s = illuStem(65) + illuLeaf(50, 90, 15, 232) + illuLeaf(50, 112, 13, 128);
+  const c4 = darken(color, 18);   // innermost petal ring
+  const gl  = "#5a8a3c", gd = "#1b3010", gm = "#2a5018";
+  let s = illuStem(66);
 
-  // Outer ring — 8 large rounded petals, lightest
-  for (let i = 0; i < 8; i++) {
-    s += `<path d="${rpetal(cx, cy, 26, 24, i*45)}" fill="${c1}" stroke="${oc}" stroke-width="1.5"/>`;
+  // Large oval leaves with branching veins
+  s += `<path d="M50,90 C28,78 10,62 16,44 C20,32 42,50 50,74 Z" fill="${gl}" stroke="${gd}" stroke-width="1.8" stroke-linejoin="round"/>`;
+  s += `<line x1="50" y1="90" x2="18" y2="46" stroke="${gm}" stroke-width="0.9" opacity="0.7"/>`;
+  s += `<line x1="36" y1="72" x2="24" y2="58" stroke="${gm}" stroke-width="0.6" opacity="0.55"/>`;
+  s += `<path d="M50,96 C72,84 90,68 84,50 C80,38 58,56 50,80 Z" fill="${gl}" stroke="${gd}" stroke-width="1.8" stroke-linejoin="round"/>`;
+  s += `<line x1="50" y1="96" x2="82" y2="52" stroke="${gm}" stroke-width="0.9" opacity="0.7"/>`;
+  s += `<line x1="64" y1="78" x2="76" y2="65" stroke="${gm}" stroke-width="0.6" opacity="0.55"/>`;
+
+  // Outer scalloped ring — 22 small rpetals create the bumpy edge of the reference
+  for (let i = 0; i < 22; i++) {
+    s += `<path d="${rpetal(cx, cy, 28, 11, i*(360/22))}" fill="${c1}" stroke="${oc}" stroke-width="1.4"/>`;
   }
-  // Second ring — 8, offset 22°
+  // Second ring — 8 large rpetals (big ruffled inner petals)
   for (let i = 0; i < 8; i++) {
-    s += `<path d="${rpetal(cx, cy, 20, 16, i*45+22)}" fill="${c2}" stroke="${oc}" stroke-width="1.4"/>`;
+    s += `<path d="${rpetal(cx, cy, 23, 20, i*45+10)}" fill="${c2}" stroke="${oc}" stroke-width="1.4"/>`;
   }
-  // Third ring — 6
+  // Third ring — 6 petals
   for (let i = 0; i < 6; i++) {
-    s += `<path d="${rpetal(cx, cy, 13, 12, i*60+8)}" fill="${c3}" stroke="${oc}" stroke-width="1.3"/>`;
+    s += `<path d="${rpetal(cx, cy, 17, 15, i*60+5)}" fill="${c3}" stroke="${oc}" stroke-width="1.3"/>`;
   }
-  // Inner ring — 5 small
+  // Inner ring — 5 small petals
   for (let i = 0; i < 5; i++) {
-    s += `<path d="${rpetal(cx, cy, 8, 8, i*72+15)}" fill="${c4}" stroke="${oc}" stroke-width="1.1"/>`;
+    s += `<path d="${rpetal(cx, cy, 11, 10, i*72+18)}" fill="${c4}" stroke="${oc}" stroke-width="1.2"/>`;
   }
-  // Yellow stamens center
-  s += `<circle cx="${cx}" cy="${cy}" r="7" fill="#f0b820" stroke="${oc}" stroke-width="1.1"/>`;
+
+  // Yellow stamen cup (small ruffled flower-within-flower, like the reference)
+  for (let i = 0; i < 10; i++) {
+    s += `<path d="${rpetal(cx, cy-2, 8, 5, i*36)}" fill="#f0b820" stroke="#7a4008" stroke-width="1.0"/>`;
+  }
+  s += `<circle cx="${cx}" cy="${cy-2}" r="5" fill="#f5c828" stroke="#7a4008" stroke-width="1.0"/>`;
+  // Stamen lines inside cup
   for (let a = 0; a < 360; a += 36) {
-    const [x1, y1] = pt(cx, cy, 3, a);
-    const [x2, y2] = pt(cx, cy, 6.5, a);
-    s += `<line x1="${f(x1)}" y1="${f(y1)}" x2="${f(x2)}" y2="${f(y2)}" stroke="#c07008" stroke-width="0.9"/>`;
-    s += `<circle cx="${f(x2)}" cy="${f(y2)}" r="0.9" fill="#c07008"/>`;
+    const [x1, y1] = pt(cx, cy-2, 2, a);
+    const [x2, y2] = pt(cx, cy-2, 5.5, a);
+    s += `<line x1="${f(x1)}" y1="${f(y1)}" x2="${f(x2)}" y2="${f(y2)}" stroke="#a05008" stroke-width="0.8"/>`;
   }
-  s += `<circle cx="${cx}" cy="${cy}" r="3.5" fill="#f5c030" stroke="none"/>`;
+  s += `<circle cx="${cx}" cy="${cy-2}" r="2.5" fill="#fdd030" stroke="none"/>`;
   return s;
 }
 
