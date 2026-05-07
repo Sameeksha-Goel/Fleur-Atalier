@@ -2,7 +2,7 @@
 
 import { LetterConfig } from "@/lib/bouquetState";
 
-const MAX_MESSAGE = 200;
+const MAX_MESSAGE = 500;
 
 type Props = {
   letter: LetterConfig;
