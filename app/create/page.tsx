@@ -13,12 +13,12 @@ import LetterPreview from "@/components/letter/LetterPreview";
 // ─── Wrap colour palette ──────────────────────────────────────────────────────
 
 const WRAP_COLORS = [
+  { hex: "#F0E2C8", label: "ivory"      },
   { hex: "#C4955A", label: "kraft"      },
   { hex: "#D4849A", label: "blush"      },
   { hex: "#C9856A", label: "terracotta" },
   { hex: "#8FAF8C", label: "sage"       },
   { hex: "#7898D8", label: "dusty blue" },
-  { hex: "#2C1810", label: "dark"       },
 ];
 
 // ─── Share modal ──────────────────────────────────────────────────────────────

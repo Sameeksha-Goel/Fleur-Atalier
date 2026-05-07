@@ -37,170 +37,128 @@ function computePositions(n: number): FlowerPos[] {
   });
 }
 
-// ─── Kraft paper wrap ─────────────────────────────────────────────────────────
+// ─── Korean-style paper wrap ──────────────────────────────────────────────────
 
 function KraftWrap({ cx, topY, color }: { cx: number; topY: number; color: string }) {
-  // Key y-positions
-  const knotY = topY + 92;   // tie point (60% down)
-  const botY  = topY + 165;  // bottom
+  const knotY = topY + 96;   // ribbon tie
+  const botY  = topY + 172;  // bottom of paper tails
 
-  // Half-widths — smooth gentle cone, no dramatic pinch
-  const topHW   = 62;  // opening (moderate, like reference)
-  const waistHW = 34;  // at tie — gradual not dramatic
-  const botHW   = 14;  // base
+  const topHW  = 80;  // wide opening
+  const knotHW = 20;  // narrow at tie
+  const tailHW = 48;  // tails fan slightly wider
 
-  // Colour palette
-  const main   = darken(color, 4);
-  const dark   = darken(color, 20);
-  const light  = lighten(color, 15);
-  const shadow = darken(color, 36);
-  const twine  = "#8a6830";
-  const twineLt = "#b8924a";
+  const main   = color;
+  const dark   = darken(color, 14);
+  const light  = lighten(color, 20);
+  const shadow = darken(color, 28);
+  const rib    = "#B8643C";
+  const ribLt  = "#D4896A";
 
-  const n = (v: number) => v.toFixed(1);
-
-  // Smooth cone silhouette (no dramatic pinch — matches reference)
-  const hourglassPath = (lx0: number, rx0: number, lxW: number, rxW: number, lxB: number, rxB: number) =>
-    `M${lx0},${topY} ` +
-    `C${lx0 + 4} ${topY + 44} ${cx - lxW - 4} ${knotY - 20} ${cx - lxW},${knotY} ` +
-    `C${cx - lxW + 4} ${knotY + 32} ${cx - lxB - 2} ${botY - 14} ${cx - lxB},${botY} ` +
-    `L${cx + rxB},${botY} ` +
-    `C${cx + rxB + 2} ${botY - 14} ${cx + rxW - 4} ${knotY + 32} ${cx + rxW},${knotY} ` +
-    `C${cx + rxW + 4} ${knotY - 20} ${rx0 - 4} ${topY + 44} ${rx0},${topY} Z`;
-
-  // Pre-compute main path so we can reuse it in defs clipPath and the shape itself
-  const mainPath = hourglassPath(cx - topHW, cx + topHW, waistHW, waistHW, botHW, botHW);
-
-  // Bow loop — teardrop-shaped path from knot centre outward
-  function loop(angleDeg: number, len: number, w: number, col: string, opacity = 1) {
-    const a  = (angleDeg - 90) * Math.PI / 180;
-    const pr = a + Math.PI / 2;
-    const tx = cx + Math.cos(a) * len;
-    const ty = knotY + Math.sin(a) * len;
-    const c1x = cx     + Math.cos(a) * len * 0.4 + Math.cos(pr) * w;
-    const c1y = knotY  + Math.sin(a) * len * 0.4 + Math.sin(pr) * w;
-    const c2x = tx + Math.cos(pr) * w * 0.38;
-    const c2y = ty + Math.sin(pr) * w * 0.38;
-    const c3x = tx - Math.cos(pr) * w * 0.38;
-    const c3y = ty - Math.sin(pr) * w * 0.38;
-    const c4x = cx     + Math.cos(a) * len * 0.4 - Math.cos(pr) * w;
-    const c4y = knotY  + Math.sin(a) * len * 0.4 - Math.sin(pr) * w;
+  // Smooth bezier cone from opening to tie
+  function cone(lW: number, rW: number) {
     return (
-      <path
-        key={angleDeg}
-        d={`M${cx},${knotY} C${n(c1x)},${n(c1y)} ${n(c2x)},${n(c2y)} ${n(tx)},${n(ty)} C${n(c3x)},${n(c3y)} ${n(c4x)},${n(c4y)} ${cx},${knotY} Z`}
-        fill={col} opacity={opacity}
-      />
+      `M${cx - lW},${topY} ` +
+      `C${cx - lW + 8},${topY + 50} ${cx - knotHW - 8},${knotY - 22} ${cx - knotHW},${knotY} ` +
+      `L${cx + knotHW},${knotY} ` +
+      `C${cx + knotHW + 8},${knotY - 22} ${cx + rW - 8},${topY + 50} ${cx + rW},${topY} Z`
     );
   }
+
+  // Paper tails below tie
+  const tailsPath =
+    `M${cx - knotHW},${knotY} ` +
+    `C${cx - tailHW},${knotY + 36} ${cx - tailHW + 8},${botY - 14} ${cx - tailHW + 16},${botY} ` +
+    `L${cx + tailHW - 16},${botY} ` +
+    `C${cx + tailHW - 8},${botY - 14} ${cx + tailHW},${knotY + 36} ${cx + knotHW},${knotY} Z`;
+
+  const mainPath = cone(topHW, topHW);
 
   return (
     <g>
       <defs>
-        {/* Subtle organic displacement — makes paper edges slightly uneven */}
-        <filter id="kw-warp" x="-6%" y="-6%" width="112%" height="112%">
-          <feTurbulence type="turbulence" baseFrequency="0.018 0.032" numOctaves="3" seed="9" result="t"/>
-          <feDisplacementMap in="SourceGraphic" in2="t" scale="4.5" xChannelSelector="R" yChannelSelector="G"/>
-        </filter>
-
-        {/* Kraft paper grain — fractal noise rendered in greyscale */}
         <filter id="kw-grain" x="0%" y="0%" width="100%" height="100%" colorInterpolationFilters="sRGB">
-          <feTurbulence type="fractalNoise" baseFrequency="0.62 0.72" numOctaves="4" seed="3" stitchTiles="stitch" result="noise"/>
+          <feTurbulence type="fractalNoise" baseFrequency="0.55 0.65" numOctaves="4" seed="3" stitchTiles="stitch" result="noise"/>
           <feColorMatrix type="saturate" values="0" in="noise" result="mono"/>
           <feComponentTransfer in="mono" result="dim">
-            <feFuncA type="linear" slope="0.13"/>
+            <feFuncA type="linear" slope="0.08"/>
           </feComponentTransfer>
           <feComposite in="dim" in2="SourceGraphic" operator="in"/>
         </filter>
-
-        {/* Clip path to contain grain overlay within wrap silhouette */}
-        <clipPath id="kw-clip">
-          <path d={mainPath}/>
-        </clipPath>
+        <clipPath id="kw-clip"><path d={mainPath}/></clipPath>
       </defs>
 
-      {/* Shadow */}
+      {/* Drop shadow */}
+      <path d={mainPath}  fill={shadow} opacity="0.13" transform="translate(5,7)"/>
+      <path d={tailsPath} fill={shadow} opacity="0.11" transform="translate(5,7)"/>
+
+      {/* Back paper layer — offset left, shows as folded edge at top edges */}
+      <path d={cone(topHW + 10, topHW - 14)} fill={dark} opacity="0.85"/>
+
+      {/* Tails — back layer */}
+      <path d={tailsPath} fill={dark} opacity="0.80"/>
+
+      {/* Right front tail panel — lighter, overlaps on top */}
       <path
-        d={hourglassPath(cx - topHW - 2, cx + topHW + 2, waistHW + 2, waistHW + 2, botHW + 2, botHW + 2)}
-        fill={shadow} opacity="0.2" transform="translate(3,5)"
+        d={`M${cx},${knotY} L${cx},${botY} C${cx + tailHW - 16},${botY} ${cx + tailHW - 8},${botY - 14} ${cx + tailHW},${knotY + 36} L${cx + knotHW},${knotY} Z`}
+        fill={light} opacity="0.88"
       />
 
-      {/* Main body — warp filter gives organic uneven paper edges */}
-      <path d={mainPath} fill={main} filter="url(#kw-warp)"/>
+      {/* Main cone — front layer */}
+      <path d={mainPath} fill={main}/>
 
-      {/* Left fold strip — darker, paper edge folding over from behind */}
+      {/* Left fold dark strip — back paper peeking at left edge */}
       <path
-        d={`M${cx - topHW},${topY}
-            C${cx - topHW + 4} ${topY + 44} ${cx - waistHW - 4} ${knotY - 20} ${cx - waistHW},${knotY}
-            C${cx - waistHW + 6} ${knotY - 12} ${cx - topHW + 18} ${topY + 40} ${cx - topHW + 16},${topY} Z`}
-        fill={dark} opacity="0.6"
+        d={`M${cx - topHW},${topY} C${cx - topHW + 7},${topY + 50} ${cx - knotHW - 8},${knotY - 22} ${cx - knotHW},${knotY} C${cx - knotHW - 4},${knotY - 14} ${cx - topHW + 18},${topY + 46} ${cx - topHW + 16},${topY} Z`}
+        fill={dark} opacity="0.58"
       />
 
-      {/* Right highlight strip — lighter, catches light */}
+      {/* Right light strip — paper catching light */}
       <path
-        d={`M${cx + topHW - 16},${topY}
-            C${cx + topHW - 18} ${topY + 40} ${cx + waistHW - 6} ${knotY - 12} ${cx + waistHW},${knotY}
-            C${cx + waistHW + 4} ${knotY - 20} ${cx + topHW - 4} ${topY + 44} ${cx + topHW},${topY} Z`}
-        fill={light} opacity="0.5"
+        d={`M${cx + topHW - 18},${topY} C${cx + topHW - 14},${topY + 48} ${cx + knotHW + 5},${knotY - 20} ${cx + knotHW},${knotY} L${cx + topHW},${topY} Z`}
+        fill={light} opacity="0.45"
       />
 
-      {/* Diagonal crease lines — corners converging at tie */}
-      <line x1={cx - topHW}      y1={topY} x2={cx - waistHW} y2={knotY} stroke={dark} strokeWidth="0.65" opacity="0.3"/>
-      <line x1={cx - topHW + 16} y1={topY} x2={cx - 12}      y2={knotY} stroke={dark} strokeWidth="0.45" opacity="0.2"/>
-      <line x1={cx + topHW}      y1={topY} x2={cx + waistHW} y2={knotY} stroke={dark} strokeWidth="0.65" opacity="0.26"/>
-      <line x1={cx + topHW - 16} y1={topY} x2={cx + 12}      y2={knotY} stroke={dark} strokeWidth="0.45" opacity="0.16"/>
+      {/* Diagonal crease lines */}
+      <line x1={cx - topHW}      y1={topY} x2={cx - knotHW} y2={knotY} stroke={dark} strokeWidth="0.6" opacity="0.28"/>
+      <line x1={cx - topHW + 26} y1={topY} x2={cx - 6}       y2={knotY} stroke={dark} strokeWidth="0.4" opacity="0.17"/>
+      <line x1={cx + topHW}      y1={topY} x2={cx + knotHW} y2={knotY} stroke={dark} strokeWidth="0.6" opacity="0.22"/>
+      <line x1={cx}              y1={knotY} x2={cx + 4}       y2={botY}  stroke={dark} strokeWidth="0.5" opacity="0.18"/>
 
-      {/* Crease lines lower half */}
-      <line x1={cx - waistHW} y1={knotY} x2={cx - botHW} y2={botY} stroke={dark} strokeWidth="0.45" opacity="0.22"/>
-      <line x1={cx + waistHW} y1={knotY} x2={cx + botHW} y2={botY} stroke={dark} strokeWidth="0.45" opacity="0.2"/>
-
-      {/* Paper rim at opening — suggests layered paper */}
+      {/* Paper rim at opening — layered paper edges */}
       <path
-        d={`M${cx - topHW},${topY} C${cx - 44} ${topY - 8} ${cx + 44} ${topY - 8} ${cx + topHW},${topY}`}
-        fill="none" stroke={dark} strokeWidth="1.2" opacity="0.4"
+        d={`M${cx - topHW},${topY} C${cx - 52},${topY - 10} ${cx + 52},${topY - 10} ${cx + topHW},${topY}`}
+        fill="none" stroke={dark} strokeWidth="1.1" opacity="0.36"
       />
       <path
-        d={`M${cx - topHW + 12},${topY} C${cx - 30} ${topY - 4} ${cx + 30} ${topY - 4} ${cx + topHW - 12},${topY}`}
-        fill="none" stroke={dark} strokeWidth="0.7" opacity="0.24"
+        d={`M${cx - topHW + 14},${topY} C${cx - 38},${topY - 5} ${cx + 38},${topY - 5} ${cx + topHW - 14},${topY}`}
+        fill="none" stroke={dark} strokeWidth="0.7" opacity="0.22"
       />
 
-      {/* Twine band at tie */}
+      {/* Subtle paper grain */}
       <rect
-        x={cx - waistHW + 3} y={knotY - 4}
-        width={(waistHW - 3) * 2} height={8}
-        rx={4} fill={twine} opacity="0.88"
+        x={cx - topHW - 6} y={topY - 4}
+        width={(topHW + 6) * 2} height={knotY - topY + 12}
+        fill={dark} filter="url(#kw-grain)"
+        clipPath="url(#kw-clip)" opacity="0.15"
       />
 
-      {/* Bow loops — 10 loops, alternating colours, varying sizes */}
-      {loop(-55, 30, 11, twine)}
-      {loop(-25, 26, 10, twineLt)}
-      {loop(-80, 22,  9, twineLt, 0.9)}
-      {loop(-105, 18, 7, twine,   0.85)}
-      {loop( 55, 30, 11, twine)}
-      {loop( 25, 26, 10, twineLt)}
-      {loop( 80, 22,  9, twineLt, 0.9)}
-      {loop(105, 18,  7, twine,   0.85)}
-      {loop(  0, 18,  7, twineLt, 0.88)}
-      {loop(180, 14,  6, twine,   0.7)}
-
+      {/* Ribbon bow — left loop */}
+      <path
+        d={`M${cx},${knotY} C${cx - 28},${knotY - 16} ${cx - 36},${knotY - 2} ${cx - 20},${knotY + 10} C${cx - 10},${knotY + 14} ${cx - 2},${knotY + 4} ${cx},${knotY} Z`}
+        fill={rib}
+      />
+      {/* Right loop */}
+      <path
+        d={`M${cx},${knotY} C${cx + 28},${knotY - 16} ${cx + 36},${knotY - 2} ${cx + 20},${knotY + 10} C${cx + 10},${knotY + 14} ${cx + 2},${knotY + 4} ${cx},${knotY} Z`}
+        fill={ribLt}
+      />
       {/* Knot centre */}
-      <ellipse cx={cx} cy={knotY} rx={9}   ry={6.5} fill={twine}/>
-      <ellipse cx={cx} cy={knotY} rx={5}   ry={3.5} fill={twineLt} opacity="0.65"/>
+      <ellipse cx={cx} cy={knotY} rx={8}   ry={5}   fill={rib}/>
+      <ellipse cx={cx} cy={knotY} rx={4.5} ry={2.8} fill={ribLt} opacity="0.55"/>
 
-      {/* Dangling twine ends */}
-      <path d={`M${cx-3},${knotY+6} C${cx-10},${knotY+26} ${cx-18},${knotY+46} ${cx-16},${knotY+62}`} fill="none" stroke={twine}   strokeWidth="1.8" strokeLinecap="round"/>
-      <path d={`M${cx+3},${knotY+6} C${cx+12},${knotY+24} ${cx+19},${knotY+42} ${cx+18},${knotY+58}`} fill="none" stroke={twine}   strokeWidth="1.8" strokeLinecap="round"/>
-      <path d={`M${cx+1},${knotY+6} C${cx+4}, ${knotY+20} ${cx+8}, ${knotY+36} ${cx+10},${knotY+52}`} fill="none" stroke={twineLt} strokeWidth="1.2" strokeLinecap="round" opacity="0.75"/>
-
-      {/* Kraft paper grain overlay — sits on top of all layers, clipped to wrap */}
-      <rect
-        x={cx - topHW - 8} y={topY - 4}
-        width={(topHW + 8) * 2} height={botY - topY + 12}
-        fill={dark}
-        filter="url(#kw-grain)"
-        clipPath="url(#kw-clip)"
-        opacity="0.22"
-      />
+      {/* Long ribbon tails streaming down */}
+      <path d={`M${cx - 4},${knotY + 5} C${cx - 14},${knotY + 34} ${cx - 18},${knotY + 66} ${cx - 10},${knotY + 82}`} fill="none" stroke={rib}   strokeWidth="5.5" strokeLinecap="round"/>
+      <path d={`M${cx + 4},${knotY + 5} C${cx + 16},${knotY + 32} ${cx + 20},${knotY + 62} ${cx + 12},${knotY + 78}`} fill="none" stroke={ribLt} strokeWidth="4.5" strokeLinecap="round"/>
     </g>
   );
 }
