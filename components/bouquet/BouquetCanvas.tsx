@@ -14,9 +14,9 @@ const CW = 400;
 const CH = 520;
 const FLOWER_SIZE = 90;
 const FLOWER_H    = Math.round(FLOWER_SIZE * 1.4);
-const TIE_X = CW / 2;
-const TIE_Y = 328;    // wrap top (topY in KraftWrap)
-const STEM_Y = TIE_Y + 96;  // stem origin — inside wrap at knot level
+const TIE_X  = CW / 2;
+const TIE_Y  = 328;           // wrap opening (topY in KraftWrap)
+const STEM_Y = TIE_Y + 96;   // stem origin — inside wrap at knot level
 
 // ─── Fan layout ───────────────────────────────────────────────────────────────
 
@@ -28,8 +28,9 @@ function computePositions(n: number): FlowerPos[] {
   return Array.from({ length: n }, (_, i) => {
     const t = n === 1 ? 0 : (i / (n - 1)) * 2 - 1;
     const angleDeg = t * spread;
-    const stemLen  = 195 - Math.abs(t) * 14;
     const rad = angleDeg * (Math.PI / 180);
+    // stemLen is chosen so hy sits exactly 20px above the wrap opening (TIE_Y)
+    const stemLen = (STEM_Y - TIE_Y) / Math.cos(rad) + 20;
     return {
       hx: TIE_X + Math.sin(rad) * stemLen,
       hy: STEM_Y - Math.cos(rad) * stemLen,
@@ -41,12 +42,12 @@ function computePositions(n: number): FlowerPos[] {
 // ─── Korean-style paper wrap ──────────────────────────────────────────────────
 
 function KraftWrap({ cx, topY, color }: { cx: number; topY: number; color: string }) {
-  const knotY = topY + 96;   // ribbon tie
-  const botY  = topY + 148;  // short tails
+  const knotY = topY + 96;
+  const botY  = topY + 148;
 
-  const topHW  = 76;  // wide opening
-  const knotHW = 18;  // narrow at tie
-  const tailHW = 24;  // small tails — not a wide bowl
+  const topHW  = 76;
+  const knotHW = 18;
+  const tailHW = 24;
 
   const main   = color;
   const dark   = darken(color, 14);
@@ -55,13 +56,18 @@ function KraftWrap({ cx, topY, color }: { cx: number; topY: number; color: strin
   const rib    = "#B8643C";
   const ribLt  = "#D4896A";
 
-  // Straight-tapered cone — control points move inward early so sides don't bow outward
+  // Perfectly straight-sided cone — control points sit exactly on the straight line
   function cone(lW: number, rW: number) {
+    const dy = knotY - topY;
+    const dl = lW - knotHW;
+    const dr = rW - knotHW;
+    const y1 = topY + dy / 3;
+    const y2 = topY + dy * 2 / 3;
     return (
       `M${cx - lW},${topY} ` +
-      `C${cx - lW + 18},${topY + 30} ${cx - knotHW - 5},${knotY - 28} ${cx - knotHW},${knotY} ` +
+      `C${cx - lW + dl / 3},${y1} ${cx - lW + dl * 2 / 3},${y2} ${cx - knotHW},${knotY} ` +
       `L${cx + knotHW},${knotY} ` +
-      `C${cx + knotHW + 5},${knotY - 28} ${cx + rW - 18},${topY + 30} ${cx + rW},${topY} Z`
+      `C${cx + knotHW + dr / 3},${y2} ${cx + knotHW + dr * 2 / 3},${y1} ${cx + rW},${topY} Z`
     );
   }
 
@@ -92,55 +98,45 @@ function KraftWrap({ cx, topY, color }: { cx: number; topY: number; color: strin
       <path d={mainPath}  fill={shadow} opacity="0.13" transform="translate(5,7)"/>
       <path d={tailsPath} fill={shadow} opacity="0.11" transform="translate(5,7)"/>
 
-      {/* Back paper layer — slightly wider on both sides, shows as folded edge */}
-      <path d={cone(topHW + 8, topHW + 8)} fill={dark} opacity="0.78"/>
+      {/* Back paper layer — slightly wider, shows as folded edge on both sides */}
+      <path d={cone(topHW + 8, topHW + 8)} fill={dark} opacity="0.75"/>
 
       {/* Tails — back layer */}
-      <path d={tailsPath} fill={dark} opacity="0.80"/>
+      <path d={tailsPath} fill={dark} opacity="0.78"/>
 
-      {/* Right front tail panel — lighter, overlaps on top */}
+      {/* Right front tail panel — lighter */}
       <path
-        d={`M${cx},${knotY} L${cx},${botY} C${cx + tailHW - 16},${botY} ${cx + tailHW - 8},${botY - 14} ${cx + tailHW},${knotY + 36} L${cx + knotHW},${knotY} Z`}
-        fill={light} opacity="0.88"
+        d={`M${cx},${knotY} L${cx},${botY} L${cx + tailHW - 6},${botY} C${cx + tailHW + 4},${botY - 10} ${cx + tailHW},${knotY + 22} L${cx + knotHW},${knotY} Z`}
+        fill={light} opacity="0.85"
       />
 
       {/* Main cone — front layer */}
       <path d={mainPath} fill={main}/>
 
-      {/* Left fold dark strip — back paper peeking at left edge */}
+      {/* Left fold strip — narrow dark band along left edge */}
       <path
-        d={`M${cx - topHW},${topY} C${cx - topHW + 7},${topY + 50} ${cx - knotHW - 8},${knotY - 22} ${cx - knotHW},${knotY} C${cx - knotHW - 4},${knotY - 14} ${cx - topHW + 18},${topY + 46} ${cx - topHW + 16},${topY} Z`}
-        fill={dark} opacity="0.58"
+        d={`M${cx - topHW},${topY} L${cx - topHW + 16},${topY} L${cx - knotHW + 3},${knotY} L${cx - knotHW},${knotY} Z`}
+        fill={dark} opacity="0.55"
       />
 
-      {/* Right light strip — paper catching light */}
+      {/* Right light strip — narrow light band along right edge */}
       <path
-        d={`M${cx + topHW - 18},${topY} C${cx + topHW - 14},${topY + 48} ${cx + knotHW + 5},${knotY - 20} ${cx + knotHW},${knotY} L${cx + topHW},${topY} Z`}
-        fill={light} opacity="0.45"
+        d={`M${cx + topHW - 16},${topY} L${cx + topHW},${topY} L${cx + knotHW},${knotY} L${cx + knotHW - 3},${knotY} Z`}
+        fill={light} opacity="0.42"
       />
 
-      {/* Diagonal crease lines */}
-      <line x1={cx - topHW}      y1={topY} x2={cx - knotHW} y2={knotY} stroke={dark} strokeWidth="0.6" opacity="0.28"/>
-      <line x1={cx - topHW + 26} y1={topY} x2={cx - 6}       y2={knotY} stroke={dark} strokeWidth="0.4" opacity="0.17"/>
-      <line x1={cx + topHW}      y1={topY} x2={cx + knotHW} y2={knotY} stroke={dark} strokeWidth="0.6" opacity="0.22"/>
-      <line x1={cx}              y1={knotY} x2={cx + 4}       y2={botY}  stroke={dark} strokeWidth="0.5" opacity="0.18"/>
-
-      {/* Paper rim at opening — layered paper edges */}
-      <path
-        d={`M${cx - topHW},${topY} C${cx - 52},${topY - 10} ${cx + 52},${topY - 10} ${cx + topHW},${topY}`}
-        fill="none" stroke={dark} strokeWidth="1.1" opacity="0.36"
-      />
-      <path
-        d={`M${cx - topHW + 14},${topY} C${cx - 38},${topY - 5} ${cx + 38},${topY - 5} ${cx + topHW - 14},${topY}`}
-        fill="none" stroke={dark} strokeWidth="0.7" opacity="0.22"
-      />
+      {/* Crease lines */}
+      <line x1={cx - topHW}      y1={topY} x2={cx - knotHW} y2={knotY} stroke={dark} strokeWidth="0.6" opacity="0.25"/>
+      <line x1={cx - topHW + 26} y1={topY} x2={cx - 6}       y2={knotY} stroke={dark} strokeWidth="0.35" opacity="0.15"/>
+      <line x1={cx + topHW}      y1={topY} x2={cx + knotHW} y2={knotY} stroke={dark} strokeWidth="0.6" opacity="0.20"/>
+      <line x1={cx}              y1={knotY} x2={cx + 4}       y2={botY}  stroke={dark} strokeWidth="0.45" opacity="0.16"/>
 
       {/* Subtle paper grain */}
       <rect
         x={cx - topHW - 6} y={topY - 4}
         width={(topHW + 6) * 2} height={knotY - topY + 12}
         fill={dark} filter="url(#kw-grain)"
-        clipPath="url(#kw-clip)" opacity="0.15"
+        clipPath="url(#kw-clip)" opacity="0.14"
       />
 
       {/* Ribbon bow — left loop */}
@@ -157,7 +153,7 @@ function KraftWrap({ cx, topY, color }: { cx: number; topY: number; color: strin
       <ellipse cx={cx} cy={knotY} rx={8}   ry={5}   fill={rib}/>
       <ellipse cx={cx} cy={knotY} rx={4.5} ry={2.8} fill={ribLt} opacity="0.55"/>
 
-      {/* Long ribbon tails streaming down */}
+      {/* Ribbon tails */}
       <path d={`M${cx - 4},${knotY + 5} C${cx - 14},${knotY + 34} ${cx - 18},${knotY + 66} ${cx - 10},${knotY + 82}`} fill="none" stroke={rib}   strokeWidth="5.5" strokeLinecap="round"/>
       <path d={`M${cx + 4},${knotY + 5} C${cx + 16},${knotY + 32} ${cx + 20},${knotY + 62} ${cx + 12},${knotY + 78}`} fill="none" stroke={ribLt} strokeWidth="4.5" strokeLinecap="round"/>
     </g>
@@ -193,7 +189,7 @@ export default function BouquetCanvas({ bouquet, width = CW }: Props) {
     <svg viewBox={`0 0 ${CW} ${CH}`} width={width} height={height} xmlns="http://www.w3.org/2000/svg">
       <rect width={CW} height={CH} fill="#FDF6EF" />
 
-      {/* Stems — originate from inside the wrap, emerge through the opening */}
+      {/* Stems — origin is inside the wrap; wrap covers the lower segment */}
       {positions.map((p, i) => (
         <line
           key={`stem-${i}`}
@@ -218,7 +214,7 @@ export default function BouquetCanvas({ bouquet, width = CW }: Props) {
         );
       })}
 
-      {/* Kraft wrap */}
+      {/* Wrap drawn last — covers stem bases inside the cone */}
       <KraftWrap cx={TIE_X} topY={TIE_Y} color={bouquet.wrap.color} />
 
       {/* Empty state */}
