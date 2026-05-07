@@ -68,6 +68,9 @@ function KraftWrap({ cx, topY, color }: { cx: number; topY: number; color: strin
     `C${cx + rxB + 2} ${botY - 14} ${cx + rxW - 4} ${knotY + 32} ${cx + rxW},${knotY} ` +
     `C${cx + rxW + 4} ${knotY - 20} ${rx0 - 4} ${topY + 44} ${rx0},${topY} Z`;
 
+  // Pre-compute main path so we can reuse it in defs clipPath and the shape itself
+  const mainPath = hourglassPath(cx - topHW, cx + topHW, waistHW, waistHW, botHW, botHW);
+
   // Bow loop — teardrop-shaped path from knot centre outward
   function loop(angleDeg: number, len: number, w: number, col: string, opacity = 1) {
     const a  = (angleDeg - 90) * Math.PI / 180;
@@ -93,17 +96,37 @@ function KraftWrap({ cx, topY, color }: { cx: number; topY: number; color: strin
 
   return (
     <g>
+      <defs>
+        {/* Subtle organic displacement — makes paper edges slightly uneven */}
+        <filter id="kw-warp" x="-6%" y="-6%" width="112%" height="112%">
+          <feTurbulence type="turbulence" baseFrequency="0.018 0.032" numOctaves="3" seed="9" result="t"/>
+          <feDisplacementMap in="SourceGraphic" in2="t" scale="4.5" xChannelSelector="R" yChannelSelector="G"/>
+        </filter>
+
+        {/* Kraft paper grain — fractal noise rendered in greyscale */}
+        <filter id="kw-grain" x="0%" y="0%" width="100%" height="100%" colorInterpolationFilters="sRGB">
+          <feTurbulence type="fractalNoise" baseFrequency="0.62 0.72" numOctaves="4" seed="3" stitchTiles="stitch" result="noise"/>
+          <feColorMatrix type="saturate" values="0" in="noise" result="mono"/>
+          <feComponentTransfer in="mono" result="dim">
+            <feFuncA type="linear" slope="0.13"/>
+          </feComponentTransfer>
+          <feComposite in="dim" in2="SourceGraphic" operator="in"/>
+        </filter>
+
+        {/* Clip path to contain grain overlay within wrap silhouette */}
+        <clipPath id="kw-clip">
+          <path d={mainPath}/>
+        </clipPath>
+      </defs>
+
       {/* Shadow */}
       <path
         d={hourglassPath(cx - topHW - 2, cx + topHW + 2, waistHW + 2, waistHW + 2, botHW + 2, botHW + 2)}
         fill={shadow} opacity="0.2" transform="translate(3,5)"
       />
 
-      {/* Main hourglass body */}
-      <path
-        d={hourglassPath(cx - topHW, cx + topHW, waistHW, waistHW, botHW, botHW)}
-        fill={main}
-      />
+      {/* Main body — warp filter gives organic uneven paper edges */}
+      <path d={mainPath} fill={main} filter="url(#kw-warp)"/>
 
       {/* Left fold strip — darker, paper edge folding over from behind */}
       <path
@@ -168,6 +191,16 @@ function KraftWrap({ cx, topY, color }: { cx: number; topY: number; color: strin
       <path d={`M${cx-3},${knotY+6} C${cx-10},${knotY+26} ${cx-18},${knotY+46} ${cx-16},${knotY+62}`} fill="none" stroke={twine}   strokeWidth="1.8" strokeLinecap="round"/>
       <path d={`M${cx+3},${knotY+6} C${cx+12},${knotY+24} ${cx+19},${knotY+42} ${cx+18},${knotY+58}`} fill="none" stroke={twine}   strokeWidth="1.8" strokeLinecap="round"/>
       <path d={`M${cx+1},${knotY+6} C${cx+4}, ${knotY+20} ${cx+8}, ${knotY+36} ${cx+10},${knotY+52}`} fill="none" stroke={twineLt} strokeWidth="1.2" strokeLinecap="round" opacity="0.75"/>
+
+      {/* Kraft paper grain overlay — sits on top of all layers, clipped to wrap */}
+      <rect
+        x={cx - topHW - 8} y={topY - 4}
+        width={(topHW + 8) * 2} height={botY - topY + 12}
+        fill={dark}
+        filter="url(#kw-grain)"
+        clipPath="url(#kw-clip)"
+        opacity="0.22"
+      />
     </g>
   );
 }
