@@ -40,157 +40,135 @@ function computePositions(n: number): FlowerPos[] {
 // ─── Kraft paper wrap ─────────────────────────────────────────────────────────
 
 function KraftWrap({ cx, topY, color }: { cx: number; topY: number; color: string }) {
-  const botY    = topY + 172;
-  const tw      = 84;   // half-width at top opening
-  const bw      = 25;   // half-width at bottom
-  const foldW   = 18;   // width of visible fold strip
-  const knotY   = topY + 78;  // twine knot height
+  // Key y-positions
+  const knotY = topY + 82;   // waist / tie point
+  const botY  = topY + 175;  // bottom soft tip
 
-  // Derive wrap shades from the chosen colour
-  const main   = darken(color, 5);
-  const dark   = darken(color, 22);
-  const light  = lighten(color, 16);
-  const shadow = darken(color, 38);
-  const twine  = "#6b4820";
-  const twineLt = "#8a6432";
+  // Half-widths at each level
+  const topHW  = 90;  // opening
+  const waistHW = 28; // tie
+  const botHW  = 6;   // tip
 
-  // Helper: format number to 1 decimal
+  // Colour palette
+  const main   = darken(color, 4);
+  const dark   = darken(color, 20);
+  const light  = lighten(color, 15);
+  const shadow = darken(color, 36);
+  const twine  = "#8a6830";
+  const twineLt = "#b8924a";
+
   const n = (v: number) => v.toFixed(1);
 
-  // Bow loop — a filled teardrop path from knot center outward at angleDeg (0=up)
-  function loop(angleDeg: number, len: number, w: number, col: string) {
+  // Hourglass silhouette path (reused for shadow + main body)
+  const hourglassPath = (lx0: number, rx0: number, lxW: number, rxW: number, lxB: number, rxB: number) =>
+    `M${lx0},${topY} ` +
+    `C${cx - 74} ${topY + 38} ${cx - lxW - 2} ${knotY - 14} ${cx - lxW},${knotY} ` +
+    `C${cx - 20} ${knotY + 42} ${cx - lxB - 4} ${botY - 18} ${cx - lxB},${botY} ` +
+    `L${cx + rxB},${botY} ` +
+    `C${cx + rxB + 4} ${botY - 18} ${cx + 20} ${knotY + 42} ${cx + rxW},${knotY} ` +
+    `C${cx + rxW + 2} ${knotY - 14} ${cx + 74} ${topY + 38} ${rx0},${topY} Z`;
+
+  // Bow loop — teardrop-shaped path from knot centre outward
+  function loop(angleDeg: number, len: number, w: number, col: string, opacity = 1) {
     const a  = (angleDeg - 90) * Math.PI / 180;
     const pr = a + Math.PI / 2;
     const tx = cx + Math.cos(a) * len;
     const ty = knotY + Math.sin(a) * len;
-    const c1x = cx  + Math.cos(a)*len*0.4 + Math.cos(pr)*w;
-    const c1y = knotY + Math.sin(a)*len*0.4 + Math.sin(pr)*w;
-    const c2x = tx + Math.cos(pr)*w*0.38;
-    const c2y = ty + Math.sin(pr)*w*0.38;
-    const c3x = tx - Math.cos(pr)*w*0.38;
-    const c3y = ty - Math.sin(pr)*w*0.38;
-    const c4x = cx  + Math.cos(a)*len*0.4 - Math.cos(pr)*w;
-    const c4y = knotY + Math.sin(a)*len*0.4 - Math.sin(pr)*w;
+    const c1x = cx     + Math.cos(a) * len * 0.4 + Math.cos(pr) * w;
+    const c1y = knotY  + Math.sin(a) * len * 0.4 + Math.sin(pr) * w;
+    const c2x = tx + Math.cos(pr) * w * 0.38;
+    const c2y = ty + Math.sin(pr) * w * 0.38;
+    const c3x = tx - Math.cos(pr) * w * 0.38;
+    const c3y = ty - Math.sin(pr) * w * 0.38;
+    const c4x = cx     + Math.cos(a) * len * 0.4 - Math.cos(pr) * w;
+    const c4y = knotY  + Math.sin(a) * len * 0.4 - Math.sin(pr) * w;
     return (
       <path
-        key={`${angleDeg}`}
+        key={angleDeg}
         d={`M${cx},${knotY} C${n(c1x)},${n(c1y)} ${n(c2x)},${n(c2y)} ${n(tx)},${n(ty)} C${n(c3x)},${n(c3y)} ${n(c4x)},${n(c4y)} ${cx},${knotY} Z`}
-        fill={col}
+        fill={col} opacity={opacity}
       />
     );
   }
 
-  // Interpolate half-width at any Y between topY and botY
-  const hw = (y: number) => bw + (tw - bw) * (1 - (y - topY) / (botY - topY));
-
   return (
     <g>
-      {/* ── Drop shadow ──────────────────────────────────────────────── */}
+      {/* Shadow */}
       <path
-        d={`M${cx-tw-2} ${topY} L${cx+tw+2} ${topY} L${cx+bw+2} ${botY} L${cx-bw-2} ${botY} Z`}
-        fill={shadow} opacity="0.18" transform="translate(4,6)"
+        d={hourglassPath(cx - topHW - 2, cx + topHW + 2, waistHW + 2, waistHW + 2, botHW + 2, botHW + 2)}
+        fill={shadow} opacity="0.2" transform="translate(3,5)"
       />
 
-      {/* ── Back layer — slightly visible on outer edges ─────────────── */}
+      {/* Main hourglass body */}
       <path
-        d={`M${cx-tw-4} ${topY} L${cx-tw} ${topY} L${cx-bw} ${botY} L${cx-bw-4} ${botY} Z`}
-        fill={dark}
-      />
-      <path
-        d={`M${cx+tw} ${topY} L${cx+tw+4} ${topY} L${cx+bw+4} ${botY} L${cx+bw} ${botY} Z`}
-        fill={dark}
-      />
-
-      {/* ── Main front panel ─────────────────────────────────────────── */}
-      <path
-        d={`M${cx-tw} ${topY} L${cx+tw} ${topY} L${cx+bw} ${botY} L${cx-bw} ${botY} Z`}
+        d={hourglassPath(cx - topHW, cx + topHW, waistHW, waistHW, botHW, botHW)}
         fill={main}
       />
 
-      {/* ── Left fold — paper coming from behind, folding over the front */}
+      {/* Left fold strip — darker, paper edge folding over from behind */}
       <path
-        d={`M${cx-tw} ${topY}
-            C${cx-tw+6} ${topY+40} ${cx-bw-2} ${topY+120} ${cx-bw} ${botY}
-            L${cx-bw+foldW} ${botY}
-            C${cx-bw+foldW-2} ${topY+120} ${cx-tw+foldW+4} ${topY+40} ${cx-tw+foldW} ${topY}
-            Z`}
-        fill={dark}
-        opacity="0.72"
+        d={`M${cx - topHW},${topY}
+            C${cx - 74} ${topY + 38} ${cx - waistHW - 2} ${knotY - 14} ${cx - waistHW},${knotY}
+            L${cx - waistHW},${knotY}
+            C${cx - waistHW + 4} ${knotY - 10} ${cx - 54} ${topY + 34} ${cx - topHW + 20},${topY} Z`}
+        fill={dark} opacity="0.65"
       />
 
-      {/* ── Right fold — lighter (catches more light) ────────────────── */}
+      {/* Right highlight strip — lighter, catches light */}
       <path
-        d={`M${cx+tw-foldW} ${topY}
-            C${cx+tw-foldW-4} ${topY+40} ${cx+bw-foldW+2} ${topY+120} ${cx+bw-foldW} ${botY}
-            L${cx+bw} ${botY}
-            C${cx+bw+2} ${topY+120} ${cx+tw-6} ${topY+40} ${cx+tw} ${topY}
-            Z`}
-        fill={light}
-        opacity="0.65"
+        d={`M${cx + topHW - 20},${topY}
+            C${cx + 54} ${topY + 34} ${cx + waistHW - 4} ${knotY - 10} ${cx + waistHW},${knotY}
+            C${cx + waistHW + 2} ${knotY - 14} ${cx + 74} ${topY + 38} ${cx + topHW},${topY} Z`}
+        fill={light} opacity="0.55"
       />
 
-      {/* ── Vertical crease lines ─────────────────────────────────────── */}
-      <line
-        x1={cx - tw + foldW} y1={topY}
-        x2={cx - bw + foldW} y2={botY}
-        stroke={dark} strokeWidth="0.6" opacity="0.4"
+      {/* Diagonal crease lines — upper half (corners to waist) */}
+      <line x1={cx - topHW}      y1={topY} x2={cx - waistHW} y2={knotY} stroke={dark} strokeWidth="0.7" opacity="0.32"/>
+      <line x1={cx - topHW + 20} y1={topY} x2={cx - 10}      y2={knotY} stroke={dark} strokeWidth="0.5" opacity="0.22"/>
+      <line x1={cx + topHW}      y1={topY} x2={cx + waistHW} y2={knotY} stroke={dark} strokeWidth="0.7" opacity="0.28"/>
+      <line x1={cx + topHW - 20} y1={topY} x2={cx + 10}      y2={knotY} stroke={dark} strokeWidth="0.5" opacity="0.18"/>
+
+      {/* Crease lines — lower half (waist to tip) */}
+      <line x1={cx - waistHW} y1={knotY} x2={cx - botHW} y2={botY} stroke={dark} strokeWidth="0.5" opacity="0.25"/>
+      <line x1={cx + waistHW} y1={knotY} x2={cx + botHW} y2={botY} stroke={dark} strokeWidth="0.5" opacity="0.22"/>
+
+      {/* Paper rim at top opening (suggests layered paper) */}
+      <path
+        d={`M${cx - topHW},${topY} C${cx - 55} ${topY - 9} ${cx + 55} ${topY - 9} ${cx + topHW},${topY}`}
+        fill="none" stroke={dark} strokeWidth="1.3" opacity="0.45"
       />
-      <line
-        x1={cx + tw - foldW} y1={topY}
-        x2={cx + bw - foldW} y2={botY}
-        stroke={dark} strokeWidth="0.6" opacity="0.35"
+      <path
+        d={`M${cx - topHW + 14},${topY} C${cx - 40} ${topY - 5} ${cx + 40} ${topY - 5} ${cx + topHW - 14},${topY}`}
+        fill="none" stroke={dark} strokeWidth="0.8" opacity="0.28"
       />
 
-      {/* ── Subtle horizontal paper creases ──────────────────────────── */}
-      {[0.28, 0.58, 0.82].map((t) => {
-        const y = topY + (botY - topY) * t;
-        const h = hw(y);
-        return (
-          <line
-            key={t}
-            x1={cx - h} y1={y} x2={cx + h} y2={y}
-            stroke={dark} strokeWidth="0.4" opacity="0.2"
-          />
-        );
-      })}
-
-      {/* ── Twine band ───────────────────────────────────────────────── */}
+      {/* Twine band at waist */}
       <rect
-        x={cx - hw(knotY) + 2} y={knotY - 3.5}
-        width={(hw(knotY) - 2) * 2} height={7}
-        fill={twine} rx={3.5} opacity="0.9"
+        x={cx - waistHW + 2} y={knotY - 4}
+        width={(waistHW - 2) * 2} height={8}
+        rx={4} fill={twine} opacity="0.88"
       />
 
-      {/* ── Bow loops (left side) ─────────────────────────────────────── */}
-      {loop(-55, 24, 9,  twine)}
-      {loop(-30, 20, 8,  twineLt)}
-      {loop(-80, 18, 7,  twineLt)}
+      {/* Bow loops — 10 loops, alternating colours, varying sizes */}
+      {loop(-55, 30, 11, twine)}
+      {loop(-25, 26, 10, twineLt)}
+      {loop(-80, 22,  9, twineLt, 0.9)}
+      {loop(-105, 18, 7, twine,   0.85)}
+      {loop( 55, 30, 11, twine)}
+      {loop( 25, 26, 10, twineLt)}
+      {loop( 80, 22,  9, twineLt, 0.9)}
+      {loop(105, 18,  7, twine,   0.85)}
+      {loop(  0, 18,  7, twineLt, 0.88)}
+      {loop(180, 14,  6, twine,   0.7)}
 
-      {/* ── Bow loops (right side) ───────────────────────────────────── */}
-      {loop( 55, 24, 9,  twine)}
-      {loop( 30, 20, 8,  twineLt)}
-      {loop( 80, 18, 7,  twineLt)}
+      {/* Knot centre */}
+      <ellipse cx={cx} cy={knotY} rx={9}   ry={6.5} fill={twine}/>
+      <ellipse cx={cx} cy={knotY} rx={5}   ry={3.5} fill={twineLt} opacity="0.65"/>
 
-      {/* ── Small top loop ───────────────────────────────────────────── */}
-      {loop(  0, 14, 6,  twine)}
-
-      {/* ── Knot centre ──────────────────────────────────────────────── */}
-      <ellipse cx={cx} cy={knotY} rx={7.5} ry={5.5} fill={twine} />
-      <ellipse cx={cx} cy={knotY} rx={4}   ry={3}   fill={twineLt} opacity="0.6"/>
-
-      {/* ── Dangling twine ends ───────────────────────────────────────── */}
-      <path
-        d={`M${cx-2},${knotY+5} C${cx-9},${knotY+22} ${cx-16},${knotY+38} ${cx-13},${knotY+54}`}
-        fill="none" stroke={twine} strokeWidth="1.6" strokeLinecap="round"
-      />
-      <path
-        d={`M${cx+2},${knotY+5} C${cx+11},${knotY+20} ${cx+17},${knotY+35} ${cx+15},${knotY+52}`}
-        fill="none" stroke={twine} strokeWidth="1.6" strokeLinecap="round"
-      />
-      <path
-        d={`M${cx-2},${knotY+5} C${cx-4},${knotY+16} ${cx-2},${knotY+28} ${cx+6},${knotY+42}`}
-        fill="none" stroke={twineLt} strokeWidth="1.1" strokeLinecap="round" opacity="0.7"
-      />
+      {/* Dangling twine ends */}
+      <path d={`M${cx-3},${knotY+6} C${cx-10},${knotY+26} ${cx-18},${knotY+46} ${cx-16},${knotY+62}`} fill="none" stroke={twine}   strokeWidth="1.8" strokeLinecap="round"/>
+      <path d={`M${cx+3},${knotY+6} C${cx+12},${knotY+24} ${cx+19},${knotY+42} ${cx+18},${knotY+58}`} fill="none" stroke={twine}   strokeWidth="1.8" strokeLinecap="round"/>
+      <path d={`M${cx+1},${knotY+6} C${cx+4}, ${knotY+20} ${cx+8}, ${knotY+36} ${cx+10},${knotY+52}`} fill="none" stroke={twineLt} strokeWidth="1.2" strokeLinecap="round" opacity="0.75"/>
     </g>
   );
 }
