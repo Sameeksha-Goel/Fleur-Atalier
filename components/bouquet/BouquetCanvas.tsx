@@ -15,7 +15,8 @@ const CH = 520;
 const FLOWER_SIZE = 90;
 const FLOWER_H    = Math.round(FLOWER_SIZE * 1.4);
 const TIE_X = CW / 2;
-const TIE_Y = 328;
+const TIE_Y = 328;    // wrap top (topY in KraftWrap)
+const STEM_Y = TIE_Y + 96;  // stem origin — inside wrap at knot level
 
 // ─── Fan layout ───────────────────────────────────────────────────────────────
 
@@ -23,15 +24,15 @@ type FlowerPos = { hx: number; hy: number; angleDeg: number };
 
 function computePositions(n: number): FlowerPos[] {
   if (n === 0) return [];
-  const spread = Math.min(5 + n * 4, 25);
+  const spread = Math.min(8 + n * 5, 38);
   return Array.from({ length: n }, (_, i) => {
     const t = n === 1 ? 0 : (i / (n - 1)) * 2 - 1;
     const angleDeg = t * spread;
-    const stemLen  = 138 - Math.abs(t) * 8;
+    const stemLen  = 218 - Math.abs(t) * 18;
     const rad = angleDeg * (Math.PI / 180);
     return {
       hx: TIE_X + Math.sin(rad) * stemLen,
-      hy: TIE_Y - Math.cos(rad) * stemLen,
+      hy: STEM_Y - Math.cos(rad) * stemLen,
       angleDeg,
     };
   });
@@ -192,11 +193,11 @@ export default function BouquetCanvas({ bouquet, width = CW }: Props) {
     <svg viewBox={`0 0 ${CW} ${CH}`} width={width} height={height} xmlns="http://www.w3.org/2000/svg">
       <rect width={CW} height={CH} fill="#FDF6EF" />
 
-      {/* Stems */}
+      {/* Stems — originate from inside the wrap, emerge through the opening */}
       {positions.map((p, i) => (
         <line
           key={`stem-${i}`}
-          x1={TIE_X} y1={TIE_Y} x2={p.hx} y2={p.hy}
+          x1={TIE_X} y1={STEM_Y} x2={p.hx} y2={p.hy}
           stroke="#3a6020" strokeWidth="1.65" strokeLinecap="round"
         />
       ))}
