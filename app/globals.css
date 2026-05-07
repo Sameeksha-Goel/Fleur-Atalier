@@ -1,0 +1,36 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #FDF6EF;
+  --foreground: #2C1A0E;
+  --accent: #C9856A;
+  --accent-dark: #A6614A;
+  --accent-light: #E8B49A;
+  --muted: #F0E4D7;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: var(--font-dm-sans), system-ui, sans-serif;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .font-playfair {
+    font-family: var(--font-playfair), Georgia, serif;
+  }
+
+  .font-dancing {
+    font-family: var(--font-dancing), cursive;
+  }
+
+  .font-dm-sans {
+    font-family: var(--font-dm-sans), system-ui, sans-serif;
+  }
+}
