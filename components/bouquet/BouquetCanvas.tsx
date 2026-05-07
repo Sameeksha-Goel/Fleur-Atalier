@@ -23,11 +23,11 @@ type FlowerPos = { hx: number; hy: number; angleDeg: number };
 
 function computePositions(n: number): FlowerPos[] {
   if (n === 0) return [];
-  const spread = Math.min(16 + n * 8, 55);
+  const spread = Math.min(5 + n * 4, 25);
   return Array.from({ length: n }, (_, i) => {
     const t = n === 1 ? 0 : (i / (n - 1)) * 2 - 1;
     const angleDeg = t * spread;
-    const stemLen  = 155 - Math.abs(t) * 20;
+    const stemLen  = 138 - Math.abs(t) * 8;
     const rad = angleDeg * (Math.PI / 180);
     return {
       hx: TIE_X + Math.sin(rad) * stemLen,
@@ -41,13 +41,13 @@ function computePositions(n: number): FlowerPos[] {
 
 function KraftWrap({ cx, topY, color }: { cx: number; topY: number; color: string }) {
   // Key y-positions
-  const knotY = topY + 82;   // waist / tie point
-  const botY  = topY + 175;  // bottom soft tip
+  const knotY = topY + 92;   // tie point (60% down)
+  const botY  = topY + 165;  // bottom
 
-  // Half-widths at each level
-  const topHW  = 90;  // opening
-  const waistHW = 28; // tie
-  const botHW  = 6;   // tip
+  // Half-widths — smooth gentle cone, no dramatic pinch
+  const topHW   = 62;  // opening (moderate, like reference)
+  const waistHW = 34;  // at tie — gradual not dramatic
+  const botHW   = 14;  // base
 
   // Colour palette
   const main   = darken(color, 4);
@@ -59,14 +59,14 @@ function KraftWrap({ cx, topY, color }: { cx: number; topY: number; color: strin
 
   const n = (v: number) => v.toFixed(1);
 
-  // Hourglass silhouette path (reused for shadow + main body)
+  // Smooth cone silhouette (no dramatic pinch — matches reference)
   const hourglassPath = (lx0: number, rx0: number, lxW: number, rxW: number, lxB: number, rxB: number) =>
     `M${lx0},${topY} ` +
-    `C${cx - 74} ${topY + 38} ${cx - lxW - 2} ${knotY - 14} ${cx - lxW},${knotY} ` +
-    `C${cx - 20} ${knotY + 42} ${cx - lxB - 4} ${botY - 18} ${cx - lxB},${botY} ` +
+    `C${lx0 + 4} ${topY + 44} ${cx - lxW - 4} ${knotY - 20} ${cx - lxW},${knotY} ` +
+    `C${cx - lxW + 4} ${knotY + 32} ${cx - lxB - 2} ${botY - 14} ${cx - lxB},${botY} ` +
     `L${cx + rxB},${botY} ` +
-    `C${cx + rxB + 4} ${botY - 18} ${cx + 20} ${knotY + 42} ${cx + rxW},${knotY} ` +
-    `C${cx + rxW + 2} ${knotY - 14} ${cx + 74} ${topY + 38} ${rx0},${topY} Z`;
+    `C${cx + rxB + 2} ${botY - 14} ${cx + rxW - 4} ${knotY + 32} ${cx + rxW},${knotY} ` +
+    `C${cx + rxW + 4} ${knotY - 20} ${rx0 - 4} ${topY + 44} ${rx0},${topY} Z`;
 
   // Bow loop — teardrop-shaped path from knot centre outward
   function loop(angleDeg: number, len: number, w: number, col: string, opacity = 1) {
@@ -108,44 +108,43 @@ function KraftWrap({ cx, topY, color }: { cx: number; topY: number; color: strin
       {/* Left fold strip — darker, paper edge folding over from behind */}
       <path
         d={`M${cx - topHW},${topY}
-            C${cx - 74} ${topY + 38} ${cx - waistHW - 2} ${knotY - 14} ${cx - waistHW},${knotY}
-            L${cx - waistHW},${knotY}
-            C${cx - waistHW + 4} ${knotY - 10} ${cx - 54} ${topY + 34} ${cx - topHW + 20},${topY} Z`}
-        fill={dark} opacity="0.65"
+            C${cx - topHW + 4} ${topY + 44} ${cx - waistHW - 4} ${knotY - 20} ${cx - waistHW},${knotY}
+            C${cx - waistHW + 6} ${knotY - 12} ${cx - topHW + 18} ${topY + 40} ${cx - topHW + 16},${topY} Z`}
+        fill={dark} opacity="0.6"
       />
 
       {/* Right highlight strip — lighter, catches light */}
       <path
-        d={`M${cx + topHW - 20},${topY}
-            C${cx + 54} ${topY + 34} ${cx + waistHW - 4} ${knotY - 10} ${cx + waistHW},${knotY}
-            C${cx + waistHW + 2} ${knotY - 14} ${cx + 74} ${topY + 38} ${cx + topHW},${topY} Z`}
-        fill={light} opacity="0.55"
+        d={`M${cx + topHW - 16},${topY}
+            C${cx + topHW - 18} ${topY + 40} ${cx + waistHW - 6} ${knotY - 12} ${cx + waistHW},${knotY}
+            C${cx + waistHW + 4} ${knotY - 20} ${cx + topHW - 4} ${topY + 44} ${cx + topHW},${topY} Z`}
+        fill={light} opacity="0.5"
       />
 
-      {/* Diagonal crease lines — upper half (corners to waist) */}
-      <line x1={cx - topHW}      y1={topY} x2={cx - waistHW} y2={knotY} stroke={dark} strokeWidth="0.7" opacity="0.32"/>
-      <line x1={cx - topHW + 20} y1={topY} x2={cx - 10}      y2={knotY} stroke={dark} strokeWidth="0.5" opacity="0.22"/>
-      <line x1={cx + topHW}      y1={topY} x2={cx + waistHW} y2={knotY} stroke={dark} strokeWidth="0.7" opacity="0.28"/>
-      <line x1={cx + topHW - 20} y1={topY} x2={cx + 10}      y2={knotY} stroke={dark} strokeWidth="0.5" opacity="0.18"/>
+      {/* Diagonal crease lines — corners converging at tie */}
+      <line x1={cx - topHW}      y1={topY} x2={cx - waistHW} y2={knotY} stroke={dark} strokeWidth="0.65" opacity="0.3"/>
+      <line x1={cx - topHW + 16} y1={topY} x2={cx - 12}      y2={knotY} stroke={dark} strokeWidth="0.45" opacity="0.2"/>
+      <line x1={cx + topHW}      y1={topY} x2={cx + waistHW} y2={knotY} stroke={dark} strokeWidth="0.65" opacity="0.26"/>
+      <line x1={cx + topHW - 16} y1={topY} x2={cx + 12}      y2={knotY} stroke={dark} strokeWidth="0.45" opacity="0.16"/>
 
-      {/* Crease lines — lower half (waist to tip) */}
-      <line x1={cx - waistHW} y1={knotY} x2={cx - botHW} y2={botY} stroke={dark} strokeWidth="0.5" opacity="0.25"/>
-      <line x1={cx + waistHW} y1={knotY} x2={cx + botHW} y2={botY} stroke={dark} strokeWidth="0.5" opacity="0.22"/>
+      {/* Crease lines lower half */}
+      <line x1={cx - waistHW} y1={knotY} x2={cx - botHW} y2={botY} stroke={dark} strokeWidth="0.45" opacity="0.22"/>
+      <line x1={cx + waistHW} y1={knotY} x2={cx + botHW} y2={botY} stroke={dark} strokeWidth="0.45" opacity="0.2"/>
 
-      {/* Paper rim at top opening (suggests layered paper) */}
+      {/* Paper rim at opening — suggests layered paper */}
       <path
-        d={`M${cx - topHW},${topY} C${cx - 55} ${topY - 9} ${cx + 55} ${topY - 9} ${cx + topHW},${topY}`}
-        fill="none" stroke={dark} strokeWidth="1.3" opacity="0.45"
+        d={`M${cx - topHW},${topY} C${cx - 44} ${topY - 8} ${cx + 44} ${topY - 8} ${cx + topHW},${topY}`}
+        fill="none" stroke={dark} strokeWidth="1.2" opacity="0.4"
       />
       <path
-        d={`M${cx - topHW + 14},${topY} C${cx - 40} ${topY - 5} ${cx + 40} ${topY - 5} ${cx + topHW - 14},${topY}`}
-        fill="none" stroke={dark} strokeWidth="0.8" opacity="0.28"
+        d={`M${cx - topHW + 12},${topY} C${cx - 30} ${topY - 4} ${cx + 30} ${topY - 4} ${cx + topHW - 12},${topY}`}
+        fill="none" stroke={dark} strokeWidth="0.7" opacity="0.24"
       />
 
-      {/* Twine band at waist */}
+      {/* Twine band at tie */}
       <rect
-        x={cx - waistHW + 2} y={knotY - 4}
-        width={(waistHW - 2) * 2} height={8}
+        x={cx - waistHW + 3} y={knotY - 4}
+        width={(waistHW - 3) * 2} height={8}
         rx={4} fill={twine} opacity="0.88"
       />
 
