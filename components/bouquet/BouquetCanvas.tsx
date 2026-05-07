@@ -50,11 +50,11 @@ function KraftWrapBack({ cx, topY, color }: { cx: number; topY: number; color: s
   //   → up right side → right wing → across top → back to left wing.
   const path =
     `M${cx - 110},${topY - 18}` +                                                            // left wing peak
-    ` C${cx - 118},${topY + 6} ${cx - 106},${knotY - 58} ${cx - 18},${knotY}` +             // left side ↓
+    ` C${cx - 87},${topY + 25} ${cx - 57},${topY + 67} ${cx - 18},${knotY}` +               // left side ↓ straight taper
     ` C${cx - 26},${knotY + 28} ${cx - 32},${knotY + 66} ${cx - 28},${knotY + 98}` +        // left tail ↓
     ` L${cx + 28},${knotY + 98}` +                                                           // tail bottom
     ` C${cx + 32},${knotY + 66} ${cx + 26},${knotY + 28} ${cx + 18},${knotY}` +             // right tail ↑
-    ` C${cx + 106},${knotY - 58} ${cx + 110},${topY + 22} ${cx + 94},${topY - 8}` +         // right side ↑
+    ` C${cx + 51},${knotY - 39} ${cx + 77},${knotY - 79} ${cx + 94},${topY - 8}` +          // right side ↑ straight taper
     ` C${cx + 104},${topY - 20} ${cx + 100},${topY - 30} ${cx + 86},${topY - 24}` +         // right wing outer
     ` C${cx + 60},${topY - 26} ${cx + 28},${topY - 20} ${cx},${topY - 12}` +                // top right half
     ` C${cx - 40},${topY - 20} ${cx - 80},${topY - 26} ${cx - 110},${topY - 18} Z`;         // top left half

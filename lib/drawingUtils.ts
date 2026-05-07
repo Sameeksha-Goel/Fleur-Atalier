@@ -135,17 +135,17 @@ function illustratedRose(color: string): string {
   for (let i = 0; i < 5; i++) {
     s += `<path d="${petal(cx, 62, 11, 5, i*72+36)}" fill="${sg}" stroke="${darken(sg,35)}" stroke-width="0.9"/>`;
   }
-  // Back ring — 5 large petals, darkest
+  // Back ring — 5 large petals, darkest (rpetal = rounded petal, dome-like)
   for (let i = 0; i < 5; i++) {
-    s += `<path d="${petal(cx, cy, 24, 18, i*72+18)}" fill="${c3}" stroke="${oc}" stroke-width="1.5"/>`;
+    s += `<path d="${rpetal(cx, cy, 22, 20, i*72+18)}" fill="${c3}" stroke="${oc}" stroke-width="1.5"/>`;
   }
   // Mid ring — 5 petals, base color
   for (let i = 0; i < 5; i++) {
-    s += `<path d="${petal(cx, cy, 19, 14, i*72)}" fill="${c2}" stroke="${oc}" stroke-width="1.4"/>`;
+    s += `<path d="${rpetal(cx, cy, 18, 17, i*72)}" fill="${c2}" stroke="${oc}" stroke-width="1.4"/>`;
   }
   // Inner ring — 4 small petals, lightest
   for (let i = 0; i < 4; i++) {
-    s += `<path d="${petal(cx, cy, 13, 10, i*90+22)}" fill="${c1}" stroke="${oc}" stroke-width="1.2"/>`;
+    s += `<path d="${rpetal(cx, cy, 12, 12, i*90+22)}" fill="${c1}" stroke="${oc}" stroke-width="1.2"/>`;
   }
   // Center bud
   s += `<circle cx="${cx}" cy="${cy}" r="7" fill="${c4}" stroke="${oc}" stroke-width="1.2"/>`;
@@ -250,9 +250,9 @@ function illustratedPeony(color: string): string {
   const c4 = darken(color, 18);
   let s = illuStem(65) + illuLeaf(50, 90, 15, 232) + illuLeaf(50, 112, 13, 128);
 
-  // Outer ring — 8 large petals, lightest
+  // Outer ring — 8 large rounded petals, lightest
   for (let i = 0; i < 8; i++) {
-    s += `<path d="${petal(cx, cy, 26, 22, i*45)}" fill="${c1}" stroke="${oc}" stroke-width="1.5"/>`;
+    s += `<path d="${rpetal(cx, cy, 26, 24, i*45)}" fill="${c1}" stroke="${oc}" stroke-width="1.5"/>`;
   }
   // Second ring — 8, offset 22°
   for (let i = 0; i < 8; i++) {
