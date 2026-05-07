@@ -79,7 +79,7 @@ export default function SendPage() {
           >
             Send one back
           </Link>
-          <p className="font-dancing text-base text-foreground/35">made with bloomly</p>
+          <p className="font-dancing text-base text-foreground/35">made with Fleur Atalier</p>
         </motion.footer>
 
       </div>

@@ -104,7 +104,7 @@ export default function RecipientPage() {
             Send one back
           </Link>
           <p className="font-dancing text-base text-foreground/35">
-            made with bloomly
+            made with Fleur Atalier
           </p>
         </motion.footer>
 

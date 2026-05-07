@@ -68,7 +68,7 @@ export default function LandingPage() {
       {/* ── Nav ────────────────────────────────────────────────────────── */}
       <nav className="fixed top-0 inset-x-0 z-40 flex items-center justify-between px-6 py-4 bg-cream/85 backdrop-blur-md border-b border-black/5">
         <span className="font-dancing text-[28px] text-terracotta leading-none">
-          bloomly
+          Fleur Atalier
         </span>
         <Link
           href="/create"
@@ -230,7 +230,7 @@ export default function LandingPage() {
 
       {/* ── Footer ─────────────────────────────────────────────────────── */}
       <footer className="py-10 px-6 bg-cream border-t border-black/6 flex flex-col items-center gap-2">
-        <span className="font-dancing text-2xl text-terracotta">bloomly</span>
+        <span className="font-dancing text-2xl text-terracotta">Fleur Atalier</span>
         <p className="font-sans text-xs text-foreground/30 tracking-wide">
           made with love
         </p>

@@ -59,7 +59,7 @@ function ShareModal({ bouquet, onClose }: ModalProps) {
       });
       const link = document.createElement("a");
       link.href = canvas.toDataURL("image/png");
-      link.download = "bloomly-bouquet.png";
+      link.download = "fleur-atalier-bouquet.png";
       link.click();
     } finally {
       setDownloading(false);
