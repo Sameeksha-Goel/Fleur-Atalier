@@ -24,11 +24,11 @@ type FlowerPos = { hx: number; hy: number; angleDeg: number };
 
 function computePositions(n: number): FlowerPos[] {
   if (n === 0) return [];
-  const spread = Math.min(8 + n * 5, 38);
+  const spread = Math.min(5 + n * 4, 28);
   return Array.from({ length: n }, (_, i) => {
     const t = n === 1 ? 0 : (i / (n - 1)) * 2 - 1;
     const angleDeg = t * spread;
-    const stemLen  = 218 - Math.abs(t) * 18;
+    const stemLen  = 195 - Math.abs(t) * 14;
     const rad = angleDeg * (Math.PI / 180);
     return {
       hx: TIE_X + Math.sin(rad) * stemLen,
@@ -42,11 +42,11 @@ function computePositions(n: number): FlowerPos[] {
 
 function KraftWrap({ cx, topY, color }: { cx: number; topY: number; color: string }) {
   const knotY = topY + 96;   // ribbon tie
-  const botY  = topY + 172;  // bottom of paper tails
+  const botY  = topY + 148;  // short tails
 
-  const topHW  = 80;  // wide opening
-  const knotHW = 20;  // narrow at tie
-  const tailHW = 48;  // tails fan slightly wider
+  const topHW  = 76;  // wide opening
+  const knotHW = 18;  // narrow at tie
+  const tailHW = 24;  // small tails — not a wide bowl
 
   const main   = color;
   const dark   = darken(color, 14);
@@ -55,22 +55,22 @@ function KraftWrap({ cx, topY, color }: { cx: number; topY: number; color: strin
   const rib    = "#B8643C";
   const ribLt  = "#D4896A";
 
-  // Smooth bezier cone from opening to tie
+  // Straight-tapered cone — control points move inward early so sides don't bow outward
   function cone(lW: number, rW: number) {
     return (
       `M${cx - lW},${topY} ` +
-      `C${cx - lW + 8},${topY + 50} ${cx - knotHW - 8},${knotY - 22} ${cx - knotHW},${knotY} ` +
+      `C${cx - lW + 18},${topY + 30} ${cx - knotHW - 5},${knotY - 28} ${cx - knotHW},${knotY} ` +
       `L${cx + knotHW},${knotY} ` +
-      `C${cx + knotHW + 8},${knotY - 22} ${cx + rW - 8},${topY + 50} ${cx + rW},${topY} Z`
+      `C${cx + knotHW + 5},${knotY - 28} ${cx + rW - 18},${topY + 30} ${cx + rW},${topY} Z`
     );
   }
 
-  // Paper tails below tie
+  // Narrow paper tails below tie
   const tailsPath =
     `M${cx - knotHW},${knotY} ` +
-    `C${cx - tailHW},${knotY + 36} ${cx - tailHW + 8},${botY - 14} ${cx - tailHW + 16},${botY} ` +
-    `L${cx + tailHW - 16},${botY} ` +
-    `C${cx + tailHW - 8},${botY - 14} ${cx + tailHW},${knotY + 36} ${cx + knotHW},${knotY} Z`;
+    `C${cx - tailHW - 4},${knotY + 22} ${cx - tailHW},${botY - 10} ${cx - tailHW + 6},${botY} ` +
+    `L${cx + tailHW - 6},${botY} ` +
+    `C${cx + tailHW},${botY - 10} ${cx + tailHW + 4},${knotY + 22} ${cx + knotHW},${knotY} Z`;
 
   const mainPath = cone(topHW, topHW);
 
@@ -92,8 +92,8 @@ function KraftWrap({ cx, topY, color }: { cx: number; topY: number; color: strin
       <path d={mainPath}  fill={shadow} opacity="0.13" transform="translate(5,7)"/>
       <path d={tailsPath} fill={shadow} opacity="0.11" transform="translate(5,7)"/>
 
-      {/* Back paper layer — offset left, shows as folded edge at top edges */}
-      <path d={cone(topHW + 10, topHW - 14)} fill={dark} opacity="0.85"/>
+      {/* Back paper layer — slightly wider on both sides, shows as folded edge */}
+      <path d={cone(topHW + 8, topHW + 8)} fill={dark} opacity="0.78"/>
 
       {/* Tails — back layer */}
       <path d={tailsPath} fill={dark} opacity="0.80"/>
