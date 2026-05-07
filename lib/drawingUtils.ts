@@ -116,147 +116,143 @@ function illuLeaf(cx: number, cy: number, size: number, angle: number): string {
   const g = "#4a7a30", dg = "#365c20";
   const [tx, ty] = pt(cx, cy, size * .82, angle);
   return (
-    `<path d="${leafPath(cx, cy, size, angle)}" fill="${g}" stroke="${dg}" stroke-width="0.75"/>` +
-    `<line x1="${f(cx)}" y1="${f(cy)}" x2="${f(tx)}" y2="${f(ty)}" stroke="${dg}" stroke-width="0.38" opacity="0.5"/>`
+    `<path d="${leafPath(cx, cy, size, angle)}" fill="${g}" stroke="none"/>` +
+    `<line x1="${f(cx)}" y1="${f(cy)}" x2="${f(tx)}" y2="${f(ty)}" stroke="${dg}" stroke-width="0.5" opacity="0.55"/>`
   );
 }
 
-// ROSE — layered outer/inner petals, spiral center bud
+// ROSE — flat botanical: 3-tone layered rings, no outlines
 function illustratedRose(color: string): string {
   const cx = 50, cy = 42;
-  const dk = darken(color, 30), li = lighten(color, 18), center = darken(color, 24);
+  const c1  = lighten(color, 25);  // outer — lightest
+  const c2  = color;               // mid
+  const c3  = darken(color, 20);   // back — darkest
+  const cen = darken(color, 35);
   let s = illuStem(62) + illuLeaf(50, 88, 14, 232) + illuLeaf(50, 108, 12, 128);
 
-  // Outer ring — 5 petals, alternating lighter shades for depth
+  // Back ring — 5 petals, darkest (drawn first, sit behind)
   for (let i = 0; i < 5; i++) {
-    const shade = i % 2 === 0 ? li : lighten(color, 10);
-    s += `<path d="${petal(cx, cy, 22, 17, i*72)}" fill="${shade}" stroke="${dk}" stroke-width="0.88"/>`;
-    const [tx, ty] = pt(cx, cy, 18, i*72);
-    s += `<line x1="${f(cx)}" y1="${f(cy)}" x2="${f(tx)}" y2="${f(ty)}" stroke="${dk}" stroke-width="0.32" opacity="0.38"/>`;
+    s += `<path d="${petal(cx, cy, 22, 17, i*72+14)}" fill="${c3}" stroke="none"/>`;
   }
-  // Inner ring — 5 petals offset 36°, full color, slightly raised look
+  // Mid ring — 5 petals, base color
   for (let i = 0; i < 5; i++) {
-    s += `<path d="${petal(cx, cy, 14, 11, i*72+36)}" fill="${color}" stroke="${dk}" stroke-width="0.72"/>`;
+    s += `<path d="${petal(cx, cy, 18, 14, i*72)}" fill="${c2}" stroke="none"/>`;
   }
-  // Spiral center bud
-  s += `<circle cx="${cx}" cy="${cy}" r="5.5" fill="${center}" stroke="${darken(color,42)}" stroke-width="0.65"/>`;
-  s += `<path d="M${cx},${cy-4} a3.5,3.5 0 0,1 3.2,2.6 a2,2 0 0,1 -1.8,2" fill="none" stroke="${darken(color,55)}" stroke-width="0.6" opacity="0.72"/>`;
-  s += `<path d="M${cx-.5},${cy-2} a1.8,1.8 0 0,1 1.6,1.4" fill="none" stroke="${darken(color,50)}" stroke-width="0.45" opacity="0.6"/>`;
+  // Front ring — 4 small petals, lightest (curl inward)
+  for (let i = 0; i < 4; i++) {
+    s += `<path d="${petal(cx, cy, 12, 10, i*90+20)}" fill="${c1}" stroke="none"/>`;
+  }
+  // Center bud
+  s += `<circle cx="${cx}" cy="${cy}" r="6" fill="${cen}" stroke="none"/>`;
+  s += `<path d="M${cx},${cy-4} a3.5,3.5 0 0,1 3.2,2.6 a2,2 0 0,1 -1.8,2" fill="none" stroke="${darken(cen,20)}" stroke-width="0.7" opacity="0.75"/>`;
+  s += `<circle cx="${f(cx-1.5)}" cy="${f(cy-2)}" r="2" fill="white" opacity="0.15" stroke="none"/>`;
   return s;
 }
 
-// TULIP — 3-petal egg-cup: left/right side petals + center upright petal
+// TULIP — flat botanical: custom 3-path egg-cup silhouette, no outlines
 function illustratedTulip(color: string): string {
-  const dk = darken(color, 30), li = lighten(color, 24);
+  const li  = lighten(color, 22);  // center petal — lightest
+  const mid = darken(color, 5);    // side petals
+  const dk  = darken(color, 18);   // shadow base behind petals
   let s = illuStem(66) + illuLeaf(50, 94, 16, 242) + illuLeaf(50, 114, 14, 118);
 
-  // Left petal (swings wide left, tips upper-left)
-  s += `<path d="M50,66 C30,63 24,36 38,18 C43,12 50,36 50,64 Z" fill="${color}" stroke="${dk}" stroke-width="0.92"/>`;
-  // Right petal (mirror)
-  s += `<path d="M50,66 C70,63 76,36 62,18 C57,12 50,36 50,64 Z" fill="${color}" stroke="${dk}" stroke-width="0.92"/>`;
-  // Center petal — upright oval, slightly lighter, sits in front
-  s += `<path d="M43,63 C41,30 45,14 50,14 C55,14 59,30 57,63 C54,67 46,67 43,63 Z" fill="${li}" stroke="${dk}" stroke-width="0.8"/>`;
-  // Subtle midrib on center petal
-  s += `<line x1="50" y1="62" x2="50" y2="16" stroke="${dk}" stroke-width="0.35" opacity="0.38"/>`;
+  // Shadow base (widest, darkest — drawn first)
+  s += `<path d="M50,66 C26,62 18,34 32,14 C37,8 50,30 50,60 C50,30 63,8 68,14 C82,34 74,62 50,66 Z" fill="${dk}" stroke="none"/>`;
+  // Left side petal
+  s += `<path d="M50,66 C28,63 20,36 34,16 C38,10 50,32 50,62 Z" fill="${mid}" stroke="none"/>`;
+  // Right side petal (mirror)
+  s += `<path d="M50,66 C72,63 80,36 66,16 C62,10 50,32 50,62 Z" fill="${mid}" stroke="none"/>`;
+  // Center petal — tallest, lightest, sits in front
+  s += `<path d="M44,62 C42,30 46,13 50,13 C54,13 58,30 56,62 C54,67 46,67 44,62 Z" fill="${li}" stroke="none"/>`;
+  // Soft highlight on center petal
+  s += `<ellipse cx="48" cy="35" rx="3" ry="8" fill="white" opacity="0.14" transform="rotate(-8,48,35)" stroke="none"/>`;
   return s;
 }
 
-// SUNFLOWER — 24 ray petals (back darker + front bright), brown center with seed rings
+// SUNFLOWER — flat botanical: round rpetal rays, layered dark center, no outlines
 function illustratedSunflower(color: string): string {
   const cx = 50, cy = 42;
-  const rayFront = color, rayBack = darken(color, 22), rayDk = darken(color, 35);
-  const centerFill = "#3a1e06", centerDk = "#1e0f02";
+  const rayFront = color, rayBack = darken(color, 25);
   let s = illuStem(58);
 
-  // Large rough left leaf
-  s += `<path d="M50,90 C38,83 26,74 28,60 C30,50 44,60 50,80 Z" fill="#4a7a30" stroke="#365c20" stroke-width="0.72"/>`;
-  s += `<line x1="50" y1="90" x2="30" y2="62" stroke="#365c20" stroke-width="0.38" opacity="0.5"/>`;
-  // Large rough right leaf
-  s += `<path d="M50,110 C62,102 74,94 72,80 C70,70 56,80 50,100 Z" fill="#4a7a30" stroke="#365c20" stroke-width="0.72"/>`;
-  s += `<line x1="50" y1="110" x2="70" y2="83" stroke="#365c20" stroke-width="0.38" opacity="0.5"/>`;
+  // Large leaves — stroke="none", vein line only
+  s += `<path d="M50,90 C36,82 24,72 26,58 C28,46 44,58 50,78 Z" fill="#4a7a30" stroke="none"/>`;
+  s += `<line x1="50" y1="90" x2="28" y2="60" stroke="#365c20" stroke-width="0.5" opacity="0.55"/>`;
+  s += `<path d="M50,110 C64,102 76,92 74,78 C72,66 56,78 50,98 Z" fill="#4a7a30" stroke="none"/>`;
+  s += `<line x1="50" y1="110" x2="72" y2="80" stroke="#365c20" stroke-width="0.5" opacity="0.55"/>`;
 
-  // Back row — 12 petals offset 15°, slightly darker and shorter
-  for (let i = 0; i < 12; i++) {
-    s += `<path d="${petal(cx, cy, 20, 8, i*30+15)}" fill="${rayBack}" stroke="${rayDk}" stroke-width="0.7"/>`;
+  // Back ring — 14 rounder petals, darker
+  for (let i = 0; i < 14; i++) {
+    s += `<path d="${rpetal(cx, cy, 21, 9, i*(360/14)+13)}" fill="${rayBack}" stroke="none"/>`;
   }
-  // Front row — 12 petals, full bright color
-  for (let i = 0; i < 12; i++) {
-    s += `<path d="${petal(cx, cy, 22, 9, i*30)}" fill="${rayFront}" stroke="${rayDk}" stroke-width="0.75"/>`;
-    const [tx, ty] = pt(cx, cy, 18, i*30);
-    s += `<line x1="${f(cx)}" y1="${f(cy)}" x2="${f(tx)}" y2="${f(ty)}" stroke="${rayDk}" stroke-width="0.3" opacity="0.38"/>`;
+  // Front ring — 14 petals, bright
+  for (let i = 0; i < 14; i++) {
+    s += `<path d="${rpetal(cx, cy, 22, 9, i*(360/14))}" fill="${rayFront}" stroke="none"/>`;
   }
-  // Dark brown center disc
-  s += `<circle cx="${cx}" cy="${cy}" r="13" fill="${centerFill}" stroke="${centerDk}" stroke-width="0.8"/>`;
-  // Seed spiral — concentric rings
-  for (let r = 11; r > 2; r -= 3.2) {
-    s += `<circle cx="${cx}" cy="${cy}" r="${f(r)}" fill="none" stroke="${centerDk}" stroke-width="0.42" opacity="0.45"/>`;
-  }
-  // Seed dots along outermost ring
-  for (let a = 0; a < 360; a += 22.5) {
-    const [dx, dy] = pt(cx, cy, 9, a);
-    s += `<circle cx="${f(dx)}" cy="${f(dy)}" r="0.85" fill="${centerDk}" opacity="0.72"/>`;
-  }
+  // Center: 3 concentric filled circles for depth
+  s += `<circle cx="${cx}" cy="${cy}" r="14" fill="#3a1e06" stroke="none"/>`;
+  s += `<circle cx="${cx}" cy="${cy}" r="10" fill="#2a1204" stroke="none"/>`;
+  s += `<circle cx="${cx}" cy="${cy}" r="5.5" fill="#1a0a02" stroke="none"/>`;
   return s;
 }
 
-// DAISY — 16 thin petals in two half-rings (back + front), dotted golden center
+// DAISY — flat botanical: thin petals, large bold center, no outlines
 function illustratedDaisy(color: string): string {
   const cx = 50, cy = 40;
-  const petalFill = color || "#f8f8f0";
-  const dk = darken(petalFill, 22);
+  const petalFill = color || "#f8f8f2";
+  const petalBack = darken(petalFill, 10);
   const centerFill = "#f0c030", centerDk = "#c89010";
   let s = illuStem(58) + illuLeaf(50, 90, 12, 230) + illuLeaf(50, 112, 10, 130);
 
-  // Back half — 8 petals at half-step offset, slightly translucent
+  // Back 8 petals — slightly darker
   for (let i = 0; i < 8; i++) {
-    const len = 22 - (i % 3) * 1.2;
-    s += `<path d="${petal(cx, cy, len, 5, i*45+22.5)}" fill="${lighten(petalFill, 6)}" stroke="${dk}" stroke-width="0.65" opacity="0.82"/>`;
+    s += `<path d="${petal(cx, cy, 23, 5.5, i*45+22.5)}" fill="${petalBack}" stroke="none"/>`;
   }
-  // Front half — 8 petals, full opacity, slight length variation for realism
+  // Front 8 petals — full color
   for (let i = 0; i < 8; i++) {
-    const len = 22 - (i % 4) * 1.5;
-    s += `<path d="${petal(cx, cy, len, 5.5, i*45)}" fill="${petalFill}" stroke="${dk}" stroke-width="0.68"/>`;
-    const [tx, ty] = pt(cx, cy, len*.8, i*45);
-    s += `<line x1="${f(cx)}" y1="${f(cy)}" x2="${f(tx)}" y2="${f(ty)}" stroke="${dk}" stroke-width="0.3" opacity="0.35"/>`;
+    s += `<path d="${petal(cx, cy, 23, 5.5, i*45)}" fill="${petalFill}" stroke="none"/>`;
   }
-  // Golden center
-  s += `<circle cx="${cx}" cy="${cy}" r="7.5" fill="${centerFill}" stroke="${centerDk}" stroke-width="0.72"/>`;
-  // Outer ring of dots
-  for (let a = 0; a < 360; a += 36) {
+  // Bold golden center disc
+  s += `<circle cx="${cx}" cy="${cy}" r="10" fill="${centerFill}" stroke="none"/>`;
+  s += `<circle cx="${cx}" cy="${cy}" r="7.5" fill="${darken(centerFill, 15)}" stroke="none"/>`;
+  // Dot texture
+  for (let a = 0; a < 360; a += 30) {
     const [dx, dy] = pt(cx, cy, 5.2, a);
-    s += `<circle cx="${f(dx)}" cy="${f(dy)}" r="0.88" fill="${centerDk}" opacity="0.65"/>`;
+    s += `<circle cx="${f(dx)}" cy="${f(dy)}" r="0.9" fill="${centerDk}" opacity="0.7" stroke="none"/>`;
   }
-  // Inner ring of dots
-  for (let a = 18; a < 360; a += 36) {
-    const [dx, dy] = pt(cx, cy, 2.9, a);
-    s += `<circle cx="${f(dx)}" cy="${f(dy)}" r="0.72" fill="${centerDk}" opacity="0.5"/>`;
-  }
-  s += `<circle cx="${cx}" cy="${cy}" r="1.2" fill="${centerDk}" opacity="0.8"/>`;
+  s += `<circle cx="${cx}" cy="${cy}" r="2" fill="${centerDk}" stroke="none"/>`;
+  // Center highlight
+  s += `<circle cx="${f(cx-2)}" cy="${f(cy-2)}" r="3.5" fill="white" opacity="0.18" stroke="none"/>`;
   return s;
 }
 
-// PEONY — dense 4-ring layered petals: outer open + progressively tighter inward
+// PEONY — flat botanical: 4-ring density, 4 color tones, no outlines
 function illustratedPeony(color: string): string {
   const cx = 50, cy = 44;
-  const dk = darken(color, 30);
+  const c1 = lighten(color, 28);  // outer — lightest
+  const c2 = lighten(color, 12);  // mid
+  const c3 = color;               // inner
+  const c4 = darken(color, 15);   // tuft — darkest
   let s = illuStem(66) + illuLeaf(50, 90, 14, 232) + illuLeaf(50, 112, 12, 128);
 
-  // Outer ring — 8 large petals, lightest tone
+  // Outer ring — 8 large petals, lightest
   for (let i = 0; i < 8; i++) {
-    s += `<path d="${petal(cx, cy, 24, 20, i*45)}" fill="${lighten(color, 20)}" stroke="${dk}" stroke-width="0.88"/>`;
+    s += `<path d="${petal(cx, cy, 24, 20, i*45)}" fill="${c1}" stroke="none"/>`;
   }
-  // Second ring — 7 petals offset 24°, medium tone, slightly ruffled (rpetal)
-  for (let i = 0; i < 7; i++) {
-    s += `<path d="${rpetal(cx, cy, 17, 14, i*(360/7)+24)}" fill="${color}" stroke="${dk}" stroke-width="0.75"/>`;
+  // Second ring — 8 petals offset 22°, rounder
+  for (let i = 0; i < 8; i++) {
+    s += `<path d="${rpetal(cx, cy, 17, 14, i*45+22)}" fill="${c2}" stroke="none"/>`;
   }
-  // Third ring — 5 petals, slightly darker
-  for (let i = 0; i < 5; i++) {
-    s += `<path d="${rpetal(cx, cy, 10, 10, i*72+8)}" fill="${lighten(color, 8)}" stroke="${dk}" stroke-width="0.65"/>`;
+  // Third ring — 6 petals
+  for (let i = 0; i < 6; i++) {
+    s += `<path d="${rpetal(cx, cy, 11, 10, i*60+8)}" fill="${c3}" stroke="none"/>`;
   }
-  // Inner tuft — 3 tiny petals, deepest color
-  for (let i = 0; i < 3; i++) {
-    s += `<path d="${rpetal(cx, cy, 5, 5, i*120)}" fill="${darken(color, 8)}" stroke="${dk}" stroke-width="0.5"/>`;
+  // Inner tuft — 4 tiny petals, deepest
+  for (let i = 0; i < 4; i++) {
+    s += `<path d="${rpetal(cx, cy, 6, 7, i*90+15)}" fill="${c4}" stroke="none"/>`;
   }
+  // Center dot
+  s += `<circle cx="${cx}" cy="${cy}" r="3" fill="${darken(color, 25)}" stroke="none"/>`;
   return s;
 }
 
