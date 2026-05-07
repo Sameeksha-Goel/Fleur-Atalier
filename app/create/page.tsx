@@ -40,7 +40,9 @@ function ShareModal({ bouquet, shareId, onClose }: ModalProps) {
     bouquet.letter.from.trim();
 
   function copyLink() {
-    const url = `${window.location.origin}/send/${shareId}`;
+    // Encode the full bouquet into the URL so it works on any device/browser
+    const encoded = btoa(encodeURIComponent(JSON.stringify(bouquet)));
+    const url = `${window.location.origin}/send/${shareId}?d=${encoded}`;
     navigator.clipboard.writeText(url).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
