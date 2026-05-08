@@ -2,10 +2,10 @@
 // Add more flower types here as you add more image files to public/flowers/.
 
 export const ROSE_IMAGES: Record<string, string> = {
-  "#E8AAB8": "/flowers/rose-pink.png",
-  "#C03044": "/flowers/rose-red.png",
-  "#9B72B5": "/flowers/rose-purple.png",
-  "#F0C040": "/flowers/rose-yellow.png",
+  "#E8AAB8": "/flowers/rose-pink.jpeg",
+  "#C03044": "/flowers/rose-red.jpeg",
+  "#9B72B5": "/flowers/rose-blue.jpeg",
+  "#F0C040": "/flowers/rose-yellow.jpeg",
 };
 
 // Ordered color options shown for rose in the picker (pink is default)
