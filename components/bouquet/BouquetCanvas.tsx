@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { BouquetState } from "@/lib/bouquetState";
 import { drawFlower, FlowerType, ArtStyle, lighten, darken } from "@/lib/drawingUtils";
-import { getRoseImage } from "@/lib/flowerAssets";
+import { getRoseImage, SUNFLOWER_IMAGE } from "@/lib/flowerAssets";
 
 type Props = {
   bouquet: BouquetState;
@@ -196,7 +196,8 @@ export default function BouquetCanvas({ bouquet, width = CW }: Props) {
   const flowerSrcs = useMemo(
     () =>
       expanded.map((f) => {
-        if (f.type === "rose") return getRoseImage(f.color);
+        if (f.type === "rose")      return getRoseImage(f.color);
+        if (f.type === "sunflower") return SUNFLOWER_IMAGE;
         return `data:image/svg+xml,${encodeURIComponent(
           drawFlower(f.type as FlowerType, bouquet.artStyle as ArtStyle, f.color, FLOWER_SIZE)
         )}`;

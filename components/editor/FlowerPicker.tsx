@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { FlowerItem } from "@/lib/bouquetState";
 import { drawFlower, FlowerType, ArtStyle } from "@/lib/drawingUtils";
-import { ROSE_COLORS, getRoseImage } from "@/lib/flowerAssets";
+import { ROSE_COLORS, getRoseImage, SUNFLOWER_IMAGE, SUNFLOWER_COLOR } from "@/lib/flowerAssets";
 
 type Props = {
   flowers: FlowerItem[];
@@ -16,7 +16,7 @@ const MAX_TOTAL = 8;
 const CATALOG: { type: FlowerType; name: string; defaultColor: string }[] = [
   { type: "rose",      name: "Rose",      defaultColor: ROSE_COLORS[0] },
   { type: "tulip",     name: "Tulip",     defaultColor: "#E8B49A" },
-  { type: "sunflower", name: "Sunflower", defaultColor: "#F5C518" },
+  { type: "sunflower", name: "Sunflower", defaultColor: SUNFLOWER_COLOR },
   { type: "daisy",     name: "Daisy",     defaultColor: "#f5f0e8" },
   { type: "peony",     name: "Peony",     defaultColor: "#C9856A" },
 ];
@@ -40,9 +40,8 @@ export default function FlowerPicker({ flowers, artStyle, onChange }: Props) {
       Object.fromEntries(
         CATALOG.map(({ type, defaultColor }) => {
           const color = flowerMap.get(type)?.color ?? defaultColor;
-          if (type === "rose") {
-            return [type, getRoseImage(color)];
-          }
+          if (type === "rose")      return [type, getRoseImage(color)];
+          if (type === "sunflower") return [type, SUNFLOWER_IMAGE];
           const svg = drawFlower(type, artStyle, color, 64);
           return [type, `data:image/svg+xml,${encodeURIComponent(svg)}`];
         })
@@ -94,8 +93,8 @@ export default function FlowerPicker({ flowers, artStyle, onChange }: Props) {
           const count = item?.count ?? 0;
           const atMax = total >= MAX_TOTAL;
 
-          // Rose uses its own 4-color swatch set; other flowers use the generic 6
-          const swatchList = type === "rose" ? ROSE_COLORS : SWATCHES;
+          // Rose → 4 image-backed colors; sunflower → no swatches (one color only); others → generic 6
+          const swatchList = type === "rose" ? ROSE_COLORS : type === "sunflower" ? [] : SWATCHES;
 
           return (
             <div key={type}>
