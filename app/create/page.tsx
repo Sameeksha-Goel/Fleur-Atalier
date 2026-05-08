@@ -50,6 +50,29 @@ function ShareModal({ bouquet, onClose }: ModalProps) {
     if (!previewRef.current || downloading) return;
     setDownloading(true);
     try {
+      // html2canvas can't load PNG files referenced via SVG <image href>.
+      // Inline them as base64 data URIs first, then restore after capture.
+      const svgImages = Array.from(
+        previewRef.current.querySelectorAll<SVGImageElement>("image[href]")
+      );
+      const restores: { el: SVGImageElement; original: string }[] = [];
+
+      await Promise.all(
+        svgImages.map(async (img) => {
+          const href = img.getAttribute("href")!;
+          if (href.startsWith("data:")) return;
+          const resp = await fetch(href);
+          const blob = await resp.blob();
+          const dataUrl = await new Promise<string>((res) => {
+            const reader = new FileReader();
+            reader.onload = () => res(reader.result as string);
+            reader.readAsDataURL(blob);
+          });
+          restores.push({ el: img, original: href });
+          img.setAttribute("href", dataUrl);
+        })
+      );
+
       const canvas = await html2canvas(previewRef.current, {
         backgroundColor: "#FDF6EF",
         scale: 2,
@@ -57,6 +80,9 @@ function ShareModal({ bouquet, onClose }: ModalProps) {
         allowTaint: true,
         imageTimeout: 0,
       });
+
+      restores.forEach(({ el, original }) => el.setAttribute("href", original));
+
       const link = document.createElement("a");
       link.href = canvas.toDataURL("image/png");
       link.download = "fleur-atalier-bouquet.png";
