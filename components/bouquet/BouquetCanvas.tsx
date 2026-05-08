@@ -223,6 +223,9 @@ export default function BouquetCanvas({ bouquet, width = CW }: Props) {
       {/* Flowers — in front of back panels */}
       {flowerSrcs.map((src, i) => {
         const p = positions[i];
+        // Static image files (JPEG/PNG) have a white background — multiply blend
+        // makes white pixels transparent against any light background.
+        const isStaticFile = src.startsWith("/");
         return (
           <image
             key={`flower-${i}`}
@@ -233,6 +236,7 @@ export default function BouquetCanvas({ bouquet, width = CW }: Props) {
             height={FLOWER_H}
             transform={`rotate(${p.angleDeg}, ${p.hx}, ${p.hy})`}
             preserveAspectRatio="xMidYMax meet"
+            style={isStaticFile ? { mixBlendMode: "multiply" } : undefined}
           />
         );
       })}
