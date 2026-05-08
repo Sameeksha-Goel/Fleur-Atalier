@@ -15,8 +15,7 @@ const CH = 520;
 const FLOWER_SIZE = 148;
 const FLOWER_H    = Math.round(FLOWER_SIZE * 1.4);
 const TIE_X  = CW / 2;
-const TIE_Y  = 195;
-const STEM_Y = TIE_Y + 110; // = 305, knot level
+const TIE_Y = 195;
 
 // ─── Fan layout ───────────────────────────────────────────────────────────────
 
@@ -24,16 +23,17 @@ type FlowerPos = { hx: number; hy: number; angleDeg: number };
 
 function computePositions(n: number): FlowerPos[] {
   if (n === 0) return [];
-  const spread = Math.min(5 + n * 4, 28);
+  const spread = Math.min(5 + n * 4, 25);
+  // hy is ~90px below the wrap opening so only the top ~55% of the PNG
+  // (flower head + upper leaves) peeks out above the wrap edge.
+  const hy = TIE_Y + 90;
   return Array.from({ length: n }, (_, i) => {
     const t = n === 1 ? 0 : (i / (n - 1)) * 2 - 1;
     const angleDeg = t * spread;
     const rad = angleDeg * (Math.PI / 180);
-    // Negative offset puts hy just inside the wrap opening (stem enters the wrap)
-    const stemLen = (STEM_Y - TIE_Y) / Math.cos(rad) - 15;
     return {
-      hx: TIE_X + Math.sin(rad) * stemLen,
-      hy: STEM_Y - Math.cos(rad) * stemLen,
+      hx: TIE_X + Math.sin(rad) * 155,
+      hy,
       angleDeg,
     };
   });
