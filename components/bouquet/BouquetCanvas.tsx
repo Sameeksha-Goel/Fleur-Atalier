@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { BouquetState } from "@/lib/bouquetState";
 import { drawFlower, FlowerType, ArtStyle, lighten, darken } from "@/lib/drawingUtils";
+import { getRoseImage } from "@/lib/flowerAssets";
 
 type Props = {
   bouquet: BouquetState;
@@ -191,13 +192,15 @@ export default function BouquetCanvas({ bouquet, width = CW }: Props) {
     [expanded.length]
   );
 
-  const dataUris = useMemo(
+  // Rose → actual PNG file; all other flowers → generated SVG data URI
+  const flowerSrcs = useMemo(
     () =>
-      expanded.map((f) =>
-        `data:image/svg+xml,${encodeURIComponent(
+      expanded.map((f) => {
+        if (f.type === "rose") return getRoseImage(f.color);
+        return `data:image/svg+xml,${encodeURIComponent(
           drawFlower(f.type as FlowerType, bouquet.artStyle as ArtStyle, f.color, FLOWER_SIZE)
-        )}`
-      ),
+        )}`;
+      }),
     [expanded, bouquet.artStyle]
   );
 
@@ -218,17 +221,18 @@ export default function BouquetCanvas({ bouquet, width = CW }: Props) {
       ))}
 
       {/* Flowers — in front of back panels */}
-      {dataUris.map((uri, i) => {
+      {flowerSrcs.map((src, i) => {
         const p = positions[i];
         return (
           <image
             key={`flower-${i}`}
-            href={uri}
+            href={src}
             x={p.hx - FLOWER_SIZE / 2}
             y={p.hy - FLOWER_H}
             width={FLOWER_SIZE}
             height={FLOWER_H}
             transform={`rotate(${p.angleDeg}, ${p.hx}, ${p.hy})`}
+            preserveAspectRatio="xMidYMax meet"
           />
         );
       })}

@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { FlowerItem } from "@/lib/bouquetState";
 import { drawFlower, FlowerType, ArtStyle } from "@/lib/drawingUtils";
+import { ROSE_COLORS, getRoseImage } from "@/lib/flowerAssets";
 
 type Props = {
   flowers: FlowerItem[];
@@ -13,13 +14,14 @@ type Props = {
 const MAX_TOTAL = 8;
 
 const CATALOG: { type: FlowerType; name: string; defaultColor: string }[] = [
-  { type: "rose",      name: "Rose",      defaultColor: "#D4849A" },
+  { type: "rose",      name: "Rose",      defaultColor: ROSE_COLORS[0] },
   { type: "tulip",     name: "Tulip",     defaultColor: "#E8B49A" },
   { type: "sunflower", name: "Sunflower", defaultColor: "#F5C518" },
   { type: "daisy",     name: "Daisy",     defaultColor: "#f5f0e8" },
   { type: "peony",     name: "Peony",     defaultColor: "#C9856A" },
 ];
 
+// Generic swatches for non-rose flowers
 const SWATCHES = ["#D4849A", "#C9856A", "#E8B49A", "#8FAF8C", "#7898D8", "#F5C518"];
 
 export default function FlowerPicker({ flowers, artStyle, onChange }: Props) {
@@ -31,12 +33,16 @@ export default function FlowerPicker({ flowers, artStyle, onChange }: Props) {
 
   const total = flowers.reduce((acc, f) => acc + f.count, 0);
 
-  // Pre-compute preview data URIs; re-runs when color or artStyle changes
+  // Preview source per flower type
+  // Rose → actual PNG file; others → generated SVG data URI
   const previews = useMemo(
     () =>
       Object.fromEntries(
         CATALOG.map(({ type, defaultColor }) => {
           const color = flowerMap.get(type)?.color ?? defaultColor;
+          if (type === "rose") {
+            return [type, getRoseImage(color)];
+          }
           const svg = drawFlower(type, artStyle, color, 64);
           return [type, `data:image/svg+xml,${encodeURIComponent(svg)}`];
         })
@@ -88,6 +94,9 @@ export default function FlowerPicker({ flowers, artStyle, onChange }: Props) {
           const count = item?.count ?? 0;
           const atMax = total >= MAX_TOTAL;
 
+          // Rose uses its own 4-color swatch set; other flowers use the generic 6
+          const swatchList = type === "rose" ? ROSE_COLORS : SWATCHES;
+
           return (
             <div key={type}>
               {/* Card row */}
@@ -106,7 +115,7 @@ export default function FlowerPicker({ flowers, artStyle, onChange }: Props) {
                     : "border-transparent bg-muted hover:border-terracotta/20 cursor-pointer",
                 ].join(" ")}
               >
-                {/* Flower preview — data URI SVG, next/image doesn't support data: src */}
+                {/* Flower preview */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={previews[type]}
@@ -117,10 +126,8 @@ export default function FlowerPicker({ flowers, artStyle, onChange }: Props) {
                   draggable={false}
                 />
 
-                {/* Name */}
                 <span className="flex-1 font-sans text-sm text-foreground">{name}</span>
 
-                {/* Quantity controls — stop click from bubbling to card */}
                 {count > 0 ? (
                   <div
                     className="flex items-center gap-1.5"
@@ -155,10 +162,10 @@ export default function FlowerPicker({ flowers, artStyle, onChange }: Props) {
                 )}
               </div>
 
-              {/* Colour swatches — visible only when flower is selected */}
+              {/* Colour swatches — rose gets its own 4-color set */}
               {count > 0 && (
                 <div className="flex gap-2 pt-2 pb-0.5 pl-[52px]">
-                  {SWATCHES.map((hex) => (
+                  {swatchList.map((hex) => (
                     <button
                       key={hex}
                       aria-label={`Set ${name} color to ${hex}`}
