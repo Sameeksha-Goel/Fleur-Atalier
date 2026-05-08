@@ -15,10 +15,7 @@ const MAX_TOTAL = 8;
 
 const CATALOG: { type: FlowerType; name: string; defaultColor: string }[] = [
   { type: "rose",      name: "Rose",      defaultColor: ROSE_COLORS[0] },
-  { type: "tulip",     name: "Tulip",     defaultColor: "#E8B49A" },
   { type: "sunflower", name: "Sunflower", defaultColor: SUNFLOWER_COLOR },
-  { type: "daisy",     name: "Daisy",     defaultColor: "#f5f0e8" },
-  { type: "peony",     name: "Peony",     defaultColor: "#C9856A" },
 ];
 
 // Generic swatches for non-rose flowers

@@ -12,7 +12,7 @@ type Props = {
 
 const CW = 400;
 const CH = 520;
-const FLOWER_SIZE = 90;
+const FLOWER_SIZE = 148;
 const FLOWER_H    = Math.round(FLOWER_SIZE * 1.4);
 const TIE_X  = CW / 2;
 const TIE_Y  = 195;
@@ -29,7 +29,8 @@ function computePositions(n: number): FlowerPos[] {
     const t = n === 1 ? 0 : (i / (n - 1)) * 2 - 1;
     const angleDeg = t * spread;
     const rad = angleDeg * (Math.PI / 180);
-    const stemLen = (STEM_Y - TIE_Y) / Math.cos(rad) + 40;
+    // Negative offset puts hy just inside the wrap opening (stem enters the wrap)
+    const stemLen = (STEM_Y - TIE_Y) / Math.cos(rad) - 15;
     return {
       hx: TIE_X + Math.sin(rad) * stemLen,
       hy: STEM_Y - Math.cos(rad) * stemLen,
@@ -212,14 +213,7 @@ export default function BouquetCanvas({ bouquet, width = CW }: Props) {
       {/* Back fold panels — behind flowers */}
       <WrapBack cx={TIE_X} topY={TIE_Y} color={bouquet.wrap.color}/>
 
-      {/* Stems */}
-      {positions.map((p, i) => (
-        <line
-          key={`stem-${i}`}
-          x1={TIE_X} y1={STEM_Y} x2={p.hx} y2={p.hy}
-          stroke="#3a6020" strokeWidth="1.65" strokeLinecap="round"
-        />
-      ))}
+      {/* No SVG stems — stems are part of the flower PNG images */}
 
       {/* Flowers — in front of back panels */}
       {flowerSrcs.map((src, i) => {
