@@ -12,7 +12,7 @@ type Props = {
 
 const CW = 400;
 const CH = 520;
-const FLOWER_SIZE = 148;
+const FLOWER_SIZE = 130;
 const FLOWER_H    = Math.round(FLOWER_SIZE * 1.4);
 const TIE_X  = CW / 2;
 const TIE_Y = 195;
@@ -24,15 +24,14 @@ type FlowerPos = { hx: number; hy: number; angleDeg: number };
 function computePositions(n: number): FlowerPos[] {
   if (n === 0) return [];
   const spread = Math.min(5 + n * 4, 25);
-  // hy is ~90px below the wrap opening so only the top ~55% of the PNG
-  // (flower head + upper leaves) peeks out above the wrap edge.
-  const hy = TIE_Y + 90;
   return Array.from({ length: n }, (_, i) => {
-    const t = n === 1 ? 0 : (i / (n - 1)) * 2 - 1;
+    const t = n === 1 ? 0 : (i / (n - 1)) * 2 - 1;  // -1 (left) → 0 (center) → 1 (right)
     const angleDeg = t * spread;
     const rad = angleDeg * (Math.PI / 180);
+    // Dome: center flowers deepest (tallest), outer ones shallower (shorter)
+    const hy = TIE_Y + 88 + Math.round(22 * t * t);
     return {
-      hx: TIE_X + Math.sin(rad) * 155,
+      hx: TIE_X + Math.sin(rad) * 55,
       hy,
       angleDeg,
     };
@@ -208,6 +207,11 @@ export default function BouquetCanvas({ bouquet, width = CW }: Props) {
 
   return (
     <svg viewBox={`0 0 ${CW} ${CH}`} width={width} height={height} xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <clipPath id="flower-clip">
+          <rect x={0} y={0} width={CW} height={TIE_Y + 5} />
+        </clipPath>
+      </defs>
       <rect width={CW} height={CH} fill="#FDF6EF"/>
 
       {/* Back fold panels — behind flowers */}
@@ -215,22 +219,32 @@ export default function BouquetCanvas({ bouquet, width = CW }: Props) {
 
       {/* No SVG stems — stems are part of the flower PNG images */}
 
-      {/* Flowers — in front of back panels */}
-      {flowerSrcs.map((src, i) => {
-        const p = positions[i];
-        return (
-          <image
-            key={`flower-${i}`}
-            href={src}
-            x={p.hx - FLOWER_SIZE / 2}
-            y={p.hy - FLOWER_H}
-            width={FLOWER_SIZE}
-            height={FLOWER_H}
-            transform={`rotate(${p.angleDeg}, ${p.hx}, ${p.hy})`}
-            preserveAspectRatio="xMidYMax meet"
-          />
-        );
-      })}
+      {/* Flowers — outer first so center flowers render on top; clipped at wrap opening */}
+      <g clipPath="url(#flower-clip)">
+        {Array.from({ length: flowerSrcs.length }, (_, i) => i)
+          .sort((a, b) => {
+            const n = flowerSrcs.length;
+            const ta = n <= 1 ? 0 : Math.abs((a / (n - 1)) * 2 - 1);
+            const tb = n <= 1 ? 0 : Math.abs((b / (n - 1)) * 2 - 1);
+            return tb - ta; // outer (|t| large) first, center last → center on top
+          })
+          .map((i) => {
+            const src = flowerSrcs[i];
+            const p = positions[i];
+            return (
+              <image
+                key={`flower-${i}`}
+                href={src}
+                x={p.hx - FLOWER_SIZE / 2}
+                y={p.hy - FLOWER_H}
+                width={FLOWER_SIZE}
+                height={FLOWER_H}
+                transform={`rotate(${p.angleDeg}, ${p.hx}, ${p.hy})`}
+                preserveAspectRatio="xMidYMax meet"
+              />
+            );
+          })}
+      </g>
 
       {/* Front cone + bow — in front of everything */}
       <WrapFront cx={TIE_X} topY={TIE_Y} color={bouquet.wrap.color}/>
