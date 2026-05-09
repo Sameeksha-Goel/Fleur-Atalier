@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { BouquetState } from "@/lib/bouquetState";
+import { BouquetState, FillerItem } from "@/lib/bouquetState";
 import {
   getRoseImage, getPeonyImage, getLilyImage,
   SUNFLOWER_IMAGE,
@@ -17,14 +17,19 @@ type Props = {
 const CW = 400;
 const CH = 520;
 
-const FLOWER_SIZE = 130;
-const FLOWER_H    = Math.round(FLOWER_SIZE * 1.4);
+// Main flowers — slightly smaller so cluster fits within wrap opening
+const FLOWER_SIZE = 118;
+const FLOWER_H    = Math.round(FLOWER_SIZE * 1.55); // 183
 
-const FILLER_SIZE = 95;
-const FILLER_H    = Math.round(FILLER_SIZE * 1.9);
+// Fillers — tall and wispy
+const FILLER_SIZE = 82;
+const FILLER_H    = Math.round(FILLER_SIZE * 2.2);  // 180
 
 const TIE_X = CW / 2;
 const TIE_Y = 195;
+
+// Per-flower tilt variety so no two flowers look parallel
+const TILT_OFFSETS = [0, 5, -4, 7, -3, 4, -6, 3];
 
 // ─── Layout helpers ───────────────────────────────────────────────────────────
 
@@ -32,40 +37,70 @@ type Pos = { hx: number; hy: number; angleDeg: number };
 
 function computeFlowerPositions(n: number): Pos[] {
   if (n === 0) return [];
-  const spread = Math.min(5 + n * 4, 25);
+  // Small spread angle — rotation fans the BLOOMS; stems stay near center
+  const spread = Math.min(7 + n * 3, 20);
   return Array.from({ length: n }, (_, i) => {
-    const t      = n === 1 ? 0 : (i / (n - 1)) * 2 - 1;
-    const angleDeg = t * spread;
-    const rad    = angleDeg * (Math.PI / 180);
-    const hy     = TIE_Y + 88 + Math.round(22 * t * t);
-    return { hx: TIE_X + Math.sin(rad) * 55, hy, angleDeg };
+    const t        = n === 1 ? 0 : (i / (n - 1)) * 2 - 1;
+    const angleDeg = t * spread + TILT_OFFSETS[i % TILT_OFFSETS.length];
+    const rad      = angleDeg * (Math.PI / 180);
+    // Dome: outer flowers' anchors are lower (hy larger) so their blooms appear lower
+    const hy = TIE_Y + 88 + Math.round(55 * t * t);
+    // Stems converge: arm is small so hx stays close to TIE_X
+    const hx = TIE_X + Math.sin(rad) * 26;
+    return { hx, hy, angleDeg };
   });
 }
 
-function computeFillerPositions(n: number): Pos[] {
-  if (n === 0) return [];
-  const spread = Math.min(10 + n * 8, 32);
-  return Array.from({ length: n }, (_, i) => {
-    const t      = n === 1 ? 0 : (i / (n - 1)) * 2 - 1;
-    const angleDeg = t * spread;
-    const rad    = angleDeg * (Math.PI / 180);
-    const hy     = TIE_Y + 78;
-    return { hx: TIE_X + Math.sin(rad) * 68, hy, angleDeg };
-  });
-}
+// Fixed scatter slots for baby's breath (wispy, fill gaps and edges)
+const BB_SLOTS: Array<{ angle: number; hyExtra: number; arm: number }> = [
+  { angle: -26, hyExtra: 60, arm: 72 }, // far left, tall
+  { angle:  26, hyExtra: 60, arm: 72 }, // far right, tall
+  { angle:  -9, hyExtra: 68, arm: 52 }, // left-center fill
+  { angle:  15, hyExtra: 68, arm: 52 }, // right-center fill
+];
 
-function fillerSrc(type: string): string {
-  if (type === "babysbreath") return BABYS_BREATH_IMAGE;
-  if (type === "lavender")    return LAVENDER_IMAGE;
-  return BABYS_BREATH_IMAGE;
+// Fixed positions for lavender (taller than flowers, peek above)
+const LAV_SLOTS: Array<{ angle: number; hyExtra: number; arm: number }> = [
+  { angle: -15, hyExtra: 48, arm: 38 }, // left-center, very tall
+  { angle:  15, hyExtra: 48, arm: 38 }, // right-center, very tall
+];
+
+function computeFillerPositions(expandedFillers: FillerItem[]): Pos[] {
+  const positions: Pos[] = new Array(expandedFillers.length);
+  let bbCount  = 0;
+  let lavCount = 0;
+
+  expandedFillers.forEach((f, i) => {
+    if (f.type === "babysbreath") {
+      const slot = BB_SLOTS[bbCount % BB_SLOTS.length];
+      bbCount++;
+      const rad    = slot.angle * (Math.PI / 180);
+      positions[i] = {
+        hx: TIE_X + Math.sin(rad) * slot.arm,
+        hy: TIE_Y + slot.hyExtra,
+        angleDeg: slot.angle,
+      };
+    } else {
+      // lavender
+      const slot = LAV_SLOTS[lavCount % LAV_SLOTS.length];
+      lavCount++;
+      const rad    = slot.angle * (Math.PI / 180);
+      positions[i] = {
+        hx: TIE_X + Math.sin(rad) * slot.arm,
+        hy: TIE_Y + slot.hyExtra,
+        angleDeg: slot.angle,
+      };
+    }
+  });
+
+  return positions;
 }
 
 function flowerSrc(type: string, color: string): string {
-  if (type === "rose")      return getRoseImage(color);
   if (type === "peony")     return getPeonyImage(color);
   if (type === "lily")      return getLilyImage(color);
   if (type === "sunflower") return SUNFLOWER_IMAGE;
-  return getRoseImage(color);
+  return getRoseImage(color); // rose + fallback
 }
 
 // ─── Canvas ───────────────────────────────────────────────────────────────────
@@ -84,39 +119,33 @@ export default function BouquetCanvas({ bouquet, width = CW }: Props) {
   );
 
   const flowerPositions = useMemo(() => computeFlowerPositions(expandedFlowers.length), [expandedFlowers.length]);
-  const fillerPositions = useMemo(() => computeFillerPositions(expandedFillers.length), [expandedFillers.length]);
+  const fillerPositions = useMemo(() => computeFillerPositions(expandedFillers),       [expandedFillers]);
 
-  // Outside-first render order so center flowers appear on top
+  // Outer flowers render first → center flowers on top (natural dome depth)
   const flowerRenderOrder = useMemo(() => {
     const n = expandedFlowers.length;
     return Array.from({ length: n }, (_, i) => i).sort((a, b) => {
       const ta = n <= 1 ? 0 : Math.abs((a / (n - 1)) * 2 - 1);
       const tb = n <= 1 ? 0 : Math.abs((b / (n - 1)) * 2 - 1);
-      return tb - ta;
+      return tb - ta; // largest |t| first
     });
   }, [expandedFlowers.length]);
 
   const wrapSrc = WRAP_IMAGES[bouquet.wrap.image];
-
   const isEmpty = bouquet.flowers.length === 0 && bouquet.fillers.length === 0;
 
   return (
     <svg viewBox={`0 0 ${CW} ${CH}`} width={width} height={height} xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        {/* Clips flowers/fillers so stems don't bleed below the wrap opening */}
-        <clipPath id="flower-clip">
-          <rect x={0} y={0} width={CW} height={TIE_Y + 5} />
-        </clipPath>
-      </defs>
-
       <rect width={CW} height={CH} fill="#FDF6EF" />
 
-      {/* Fillers — behind everything */}
-      <g clipPath="url(#flower-clip)">
-        {fillerPositions.map((p, i) => (
+      {/* ── Layer 1: Baby's breath — behind everything above the wrap ── */}
+      {expandedFillers.map((f, i) => {
+        if (f.type !== "babysbreath") return null;
+        const p = fillerPositions[i];
+        return (
           <image
-            key={`filler-${i}`}
-            href={fillerSrc(expandedFillers[i].type)}
+            key={`bb-${i}`}
+            href={BABYS_BREATH_IMAGE}
             x={p.hx - FILLER_SIZE / 2}
             y={p.hy - FILLER_H}
             width={FILLER_SIZE}
@@ -124,36 +153,52 @@ export default function BouquetCanvas({ bouquet, width = CW }: Props) {
             transform={`rotate(${p.angleDeg}, ${p.hx}, ${p.hy})`}
             preserveAspectRatio="xMidYMax meet"
           />
-        ))}
-      </g>
+        );
+      })}
 
-      {/* Main flowers — outer renders first, center on top */}
-      <g clipPath="url(#flower-clip)">
-        {flowerRenderOrder.map((i) => {
-          const f = expandedFlowers[i];
-          const p = flowerPositions[i];
-          return (
-            <image
-              key={`flower-${i}`}
-              href={flowerSrc(f.type, f.color)}
-              x={p.hx - FLOWER_SIZE / 2}
-              y={p.hy - FLOWER_H}
-              width={FLOWER_SIZE}
-              height={FLOWER_H}
-              transform={`rotate(${p.angleDeg}, ${p.hx}, ${p.hy})`}
-              preserveAspectRatio="xMidYMax meet"
-            />
-          );
-        })}
-      </g>
+      {/* ── Layer 2: Lavender — taller than flowers, peeks above cluster ── */}
+      {expandedFillers.map((f, i) => {
+        if (f.type !== "lavender") return null;
+        const p = fillerPositions[i];
+        return (
+          <image
+            key={`lav-${i}`}
+            href={LAVENDER_IMAGE}
+            x={p.hx - FILLER_SIZE / 2}
+            y={p.hy - FILLER_H}
+            width={FILLER_SIZE}
+            height={FILLER_H}
+            transform={`rotate(${p.angleDeg}, ${p.hx}, ${p.hy})`}
+            preserveAspectRatio="xMidYMax meet"
+          />
+        );
+      })}
 
-      {/* Wrap image — in front of stems, behind flower heads */}
+      {/* ── Layer 3: Main flowers — outer behind, center in front ── */}
+      {flowerRenderOrder.map((i) => {
+        const f = expandedFlowers[i];
+        const p = flowerPositions[i];
+        return (
+          <image
+            key={`flower-${i}`}
+            href={flowerSrc(f.type, f.color)}
+            x={p.hx - FLOWER_SIZE / 2}
+            y={p.hy - FLOWER_H}
+            width={FLOWER_SIZE}
+            height={FLOWER_H}
+            transform={`rotate(${p.angleDeg}, ${p.hx}, ${p.hy})`}
+            preserveAspectRatio="xMidYMax meet"
+          />
+        );
+      })}
+
+      {/* ── Layer 4: Wrap image — covers all stems, only blooms visible above ── */}
       <image
         href={wrapSrc}
         x={(CW - 280) / 2}
-        y={TIE_Y - 30}
+        y={TIE_Y - 35}
         width={280}
-        height={CH - TIE_Y + 30}
+        height={CH - TIE_Y + 35}
         preserveAspectRatio="xMidYMin meet"
       />
 
