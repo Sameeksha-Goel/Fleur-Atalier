@@ -9,20 +9,15 @@ import { BouquetState } from "@/lib/bouquetState";
 
 const HERO_BOUQUET: BouquetState = {
   id: "hero-preview",
-  artStyle: "illustrated",
   flowers: [
-    { id: "r1", type: "rose",  color: "#E8829A", count: 2 },
-    { id: "p1", type: "peony", color: "#D4849A", count: 1 },
-    { id: "d1", type: "daisy", color: "#F8F0E0", count: 1 },
+    { id: "r1", type: "rose",      color: "#E8AAB8", count: 2 },
+    { id: "p1", type: "peony",     color: "#E8AAB8", count: 1 },
+    { id: "s1", type: "sunflower", color: "#F5C518", count: 1 },
   ],
-  fillers: [],
-  displayStyle: "hand-tied",
-  wrap: {
-    material: "kraft",
-    foldStyle: "classic",
-    color: "#C4955A",
-    embellishment: "ribbon",
-  },
+  fillers: [
+    { id: "b1", type: "babysbreath", count: 1 },
+  ],
+  wrap: { image: "white" },
   letter: {
     paperColor: "#FDF6EF",
     font: "dancing",

@@ -2,26 +2,36 @@
 
 import { useMemo } from "react";
 import { FlowerItem } from "@/lib/bouquetState";
-import { drawFlower, FlowerType, ArtStyle } from "@/lib/drawingUtils";
-import { ROSE_COLORS, getRoseImage, SUNFLOWER_IMAGE, SUNFLOWER_COLOR } from "@/lib/flowerAssets";
+import {
+  ROSE_COLORS, getRoseImage,
+  PEONY_COLORS, getPeonyImage,
+  LILY_COLORS, getLilyImage,
+  SUNFLOWER_IMAGE, SUNFLOWER_COLOR,
+} from "@/lib/flowerAssets";
 
 type Props = {
   flowers: FlowerItem[];
-  artStyle: ArtStyle;
   onChange: (flowers: FlowerItem[]) => void;
 };
 
 const MAX_TOTAL = 8;
 
-const CATALOG: { type: FlowerType; name: string; defaultColor: string }[] = [
-  { type: "rose",      name: "Rose",      defaultColor: ROSE_COLORS[0] },
-  { type: "sunflower", name: "Sunflower", defaultColor: SUNFLOWER_COLOR },
+type CatalogEntry = {
+  type: string;
+  name: string;
+  defaultColor: string;
+  colors: string[];
+  getImage: (color: string) => string;
+};
+
+const CATALOG: CatalogEntry[] = [
+  { type: "rose",      name: "Rose",      defaultColor: ROSE_COLORS[0],  colors: ROSE_COLORS,  getImage: getRoseImage  },
+  { type: "peony",     name: "Peony",     defaultColor: PEONY_COLORS[0], colors: PEONY_COLORS, getImage: getPeonyImage },
+  { type: "lily",      name: "Lily",      defaultColor: LILY_COLORS[0],  colors: LILY_COLORS,  getImage: getLilyImage  },
+  { type: "sunflower", name: "Sunflower", defaultColor: SUNFLOWER_COLOR,  colors: [],           getImage: () => SUNFLOWER_IMAGE },
 ];
 
-// Generic swatches for non-rose flowers
-const SWATCHES = ["#D4849A", "#C9856A", "#E8B49A", "#8FAF8C", "#7898D8", "#F5C518"];
-
-export default function FlowerPicker({ flowers, artStyle, onChange }: Props) {
+export default function FlowerPicker({ flowers, onChange }: Props) {
   const flowerMap = useMemo(() => {
     const m = new Map<string, FlowerItem>();
     flowers.forEach((f) => m.set(f.type, f));
@@ -30,37 +40,28 @@ export default function FlowerPicker({ flowers, artStyle, onChange }: Props) {
 
   const total = flowers.reduce((acc, f) => acc + f.count, 0);
 
-  // Preview source per flower type
-  // Rose → actual PNG file; others → generated SVG data URI
   const previews = useMemo(
     () =>
       Object.fromEntries(
-        CATALOG.map(({ type, defaultColor }) => {
+        CATALOG.map(({ type, defaultColor, getImage }) => {
           const color = flowerMap.get(type)?.color ?? defaultColor;
-          if (type === "rose")      return [type, getRoseImage(color)];
-          if (type === "sunflower") return [type, SUNFLOWER_IMAGE];
-          const svg = drawFlower(type, artStyle, color, 64);
-          return [type, `data:image/svg+xml,${encodeURIComponent(svg)}`];
+          return [type, getImage(color)];
         })
-      ) as Record<FlowerType, string>,
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [artStyle, flowers]
+      ) as Record<string, string>,
+    [flowerMap]
   );
 
-  function add(type: FlowerType, defaultColor: string) {
+  function add(type: string, defaultColor: string) {
     if (total >= MAX_TOTAL) return;
     const existing = flowerMap.get(type);
     if (existing) {
       onChange(flowers.map((f) => (f.type === type ? { ...f, count: f.count + 1 } : f)));
     } else {
-      onChange([
-        ...flowers,
-        { id: `${type}-${Date.now()}`, type, color: defaultColor, count: 1 },
-      ]);
+      onChange([...flowers, { id: `${type}-${Date.now()}`, type, color: defaultColor, count: 1 }]);
     }
   }
 
-  function remove(type: FlowerType) {
+  function remove(type: string) {
     const existing = flowerMap.get(type);
     if (!existing) return;
     if (existing.count <= 1) {
@@ -70,7 +71,7 @@ export default function FlowerPicker({ flowers, artStyle, onChange }: Props) {
     }
   }
 
-  function setColor(type: FlowerType, color: string) {
+  function setColor(type: string, color: string) {
     onChange(flowers.map((f) => (f.type === type ? { ...f, color } : f)));
   }
 
@@ -84,18 +85,14 @@ export default function FlowerPicker({ flowers, artStyle, onChange }: Props) {
       </div>
 
       <div className="flex flex-col gap-2">
-        {CATALOG.map(({ type, name, defaultColor }) => {
+        {CATALOG.map(({ type, name, defaultColor, colors, getImage }) => {
           const item  = flowerMap.get(type);
           const color = item?.color ?? defaultColor;
           const count = item?.count ?? 0;
           const atMax = total >= MAX_TOTAL;
 
-          // Rose → 4 image-backed colors; sunflower → no swatches (one color only); others → generic 6
-          const swatchList = type === "rose" ? ROSE_COLORS : type === "sunflower" ? [] : SWATCHES;
-
           return (
             <div key={type}>
-              {/* Card row */}
               <div
                 role="button"
                 tabIndex={0}
@@ -111,7 +108,6 @@ export default function FlowerPicker({ flowers, artStyle, onChange }: Props) {
                     : "border-transparent bg-muted hover:border-terracotta/20 cursor-pointer",
                 ].join(" ")}
               >
-                {/* Flower preview */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={previews[type]}
@@ -125,10 +121,7 @@ export default function FlowerPicker({ flowers, artStyle, onChange }: Props) {
                 <span className="flex-1 font-sans text-sm text-foreground">{name}</span>
 
                 {count > 0 ? (
-                  <div
-                    className="flex items-center gap-1.5"
-                    onClick={(e) => e.stopPropagation()}
-                  >
+                  <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                     <button
                       aria-label={`Remove one ${name}`}
                       className="w-6 h-6 rounded-full bg-terracotta/15 text-terracotta leading-none flex items-center justify-center hover:bg-terracotta/28 transition-colors"
@@ -158,17 +151,18 @@ export default function FlowerPicker({ flowers, artStyle, onChange }: Props) {
                 )}
               </div>
 
-              {/* Colour swatches — rose gets its own 4-color set */}
-              {count > 0 && (
+              {count > 0 && colors.length > 0 && (
                 <div className="flex gap-2 pt-2 pb-0.5 pl-[52px]">
-                  {swatchList.map((hex) => (
+                  {colors.map((hex) => (
                     <button
                       key={hex}
                       aria-label={`Set ${name} color to ${hex}`}
                       onClick={() => setColor(type, hex)}
-                      className="w-5 h-5 rounded-full border-2 transition-all shrink-0"
+                      className="w-5 h-5 rounded-full border-2 transition-all shrink-0 overflow-hidden"
                       style={{
-                        backgroundColor: hex,
+                        backgroundImage: `url(${getImage(hex)})`,
+                        backgroundSize: "cover",
+                        backgroundPosition: "center top",
                         borderColor: color === hex ? "#2C1A0E" : "transparent",
                         boxShadow:
                           color === hex

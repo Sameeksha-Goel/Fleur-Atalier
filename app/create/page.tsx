@@ -4,21 +4,16 @@ import { useState, useCallback, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import html2canvas from "html2canvas";
 import { BouquetState, defaultBouquetState, saveBouquet, encodeBouquetUrl } from "@/lib/bouquetState";
-import { ArtStyle } from "@/lib/drawingUtils";
+import { WrapKey, WRAP_IMAGES } from "@/lib/flowerAssets";
 import FlowerPicker from "@/components/editor/FlowerPicker";
+import FillerPicker from "@/components/editor/FillerPicker";
 import BouquetCanvas from "@/components/bouquet/BouquetCanvas";
 import LetterComposer from "@/components/letter/LetterComposer";
 import LetterPreview from "@/components/letter/LetterPreview";
 
-// ─── Wrap colour palette ──────────────────────────────────────────────────────
-
-const WRAP_COLORS = [
-  { hex: "#F0E2C8", label: "ivory"      },
-  { hex: "#C4955A", label: "kraft"      },
-  { hex: "#D4849A", label: "blush"      },
-  { hex: "#C9856A", label: "terracotta" },
-  { hex: "#8FAF8C", label: "sage"       },
-  { hex: "#7898D8", label: "dusty blue" },
+const WRAP_OPTIONS: { key: WrapKey; label: string }[] = [
+  { key: "white", label: "White" },
+  { key: "black", label: "Black" },
 ];
 
 // ─── Share modal ──────────────────────────────────────────────────────────────
@@ -50,8 +45,6 @@ function ShareModal({ bouquet, onClose }: ModalProps) {
     if (!previewRef.current || downloading) return;
     setDownloading(true);
     try {
-      // html2canvas can't load PNG files referenced via SVG <image href>.
-      // Inline them as base64 data URIs first, then restore after capture.
       const svgImages = Array.from(
         previewRef.current.querySelectorAll<SVGImageElement>("image[href]")
       );
@@ -100,13 +93,8 @@ function ShareModal({ bouquet, onClose }: ModalProps) {
       exit={{ opacity: 0 }}
       transition={{ duration: 0.22 }}
     >
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/55 backdrop-blur-[2px]"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0 bg-black/55 backdrop-blur-[2px]" onClick={onClose} />
 
-      {/* Card */}
       <motion.div
         className="relative z-10 w-full max-w-[420px] max-h-[92vh] overflow-y-auto rounded-3xl bg-cream shadow-2xl"
         initial={{ opacity: 0, scale: 0.95, y: 16 }}
@@ -114,13 +102,11 @@ function ShareModal({ bouquet, onClose }: ModalProps) {
         exit={{    opacity: 0, scale: 0.95, y: 16 }}
         transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
       >
-        {/* Preview area — captured by html2canvas */}
         <div ref={previewRef} className="bg-[#F8F0E8] rounded-t-3xl px-6 pt-6 pb-4 flex flex-col gap-4">
           <BouquetCanvas bouquet={bouquet} width={372} />
           {hasLetter && <LetterPreview letter={bouquet.letter} />}
         </div>
 
-        {/* Actions */}
         <div className="px-6 py-5 flex flex-col gap-3">
           <button
             onClick={copyLink}
@@ -194,42 +180,54 @@ export default function CreatePage() {
             {/* Section 1 — Flowers */}
             <FlowerPicker
               flowers={bouquet.flowers}
-              artStyle={bouquet.artStyle as ArtStyle}
               onChange={(flowers) => update("flowers", flowers)}
             />
 
-            {/* Section 2 — Wrap colour */}
+            {/* Section 2 — Fillers */}
+            <FillerPicker
+              fillers={bouquet.fillers}
+              onChange={(fillers) => update("fillers", fillers)}
+            />
+
+            {/* Section 3 — Wrap */}
             <section>
-              <h2 className="font-playfair text-lg text-foreground mb-3">Wrap colour</h2>
-              <div className="flex gap-2.5 flex-wrap">
-                {WRAP_COLORS.map(({ hex, label }) => {
-                  const active = bouquet.wrap.color === hex;
+              <h2 className="font-playfair text-lg text-foreground mb-3">Wrap style</h2>
+              <div className="flex gap-3">
+                {WRAP_OPTIONS.map(({ key, label }) => {
+                  const active = bouquet.wrap.image === key;
                   return (
                     <button
-                      key={hex}
-                      title={label}
+                      key={key}
                       aria-label={`${label} wrap`}
-                      onClick={() => update("wrap", { ...bouquet.wrap, color: hex })}
-                      className="w-8 h-8 rounded-full transition-all"
-                      style={{
-                        backgroundColor: hex,
-                        boxShadow: active
-                          ? "0 0 0 2px #FDF6EF, 0 0 0 4px #2C1A0E"
-                          : "none",
-                      }}
-                    />
+                      onClick={() => update("wrap", { image: key })}
+                      className={[
+                        "flex-1 flex flex-col items-center gap-2 rounded-2xl border-2 p-2 transition-all",
+                        active
+                          ? "border-terracotta"
+                          : "border-transparent hover:border-terracotta/30",
+                      ].join(" ")}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={WRAP_IMAGES[key]}
+                        alt={label}
+                        className="w-full h-24 object-contain"
+                        draggable={false}
+                      />
+                      <span className="font-sans text-xs text-foreground/70">{label}</span>
+                    </button>
                   );
                 })}
               </div>
             </section>
 
-            {/* Section 3 — Letter */}
+            {/* Section 4 — Letter */}
             <LetterComposer
               letter={bouquet.letter}
               onChange={(letter) => update("letter", letter)}
             />
 
-            {/* Section 4 — Actions */}
+            {/* Section 5 — Actions */}
             <div className="flex flex-col gap-3 pb-2">
               <button
                 className="bg-terracotta text-cream font-sans py-3 rounded-full text-sm font-medium hover:bg-terracotta-dark active:scale-[0.98] transition-all"
@@ -266,7 +264,6 @@ export default function CreatePage() {
 
       </div>
 
-      {/* Share modal — portal-like, sits above everything */}
       <AnimatePresence>
         {shareId && (
           <ShareModal

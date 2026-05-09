@@ -2,8 +2,12 @@
 
 import { useMemo } from "react";
 import { BouquetState } from "@/lib/bouquetState";
-import { drawFlower, FlowerType, ArtStyle, lighten, darken } from "@/lib/drawingUtils";
-import { getRoseImage, SUNFLOWER_IMAGE } from "@/lib/flowerAssets";
+import {
+  getRoseImage, getPeonyImage, getLilyImage,
+  SUNFLOWER_IMAGE,
+  BABYS_BREATH_IMAGE, LAVENDER_IMAGE,
+  WRAP_IMAGES,
+} from "@/lib/flowerAssets";
 
 type Props = {
   bouquet: BouquetState;
@@ -12,169 +16,56 @@ type Props = {
 
 const CW = 400;
 const CH = 520;
+
 const FLOWER_SIZE = 130;
 const FLOWER_H    = Math.round(FLOWER_SIZE * 1.4);
-const TIE_X  = CW / 2;
+
+const FILLER_SIZE = 95;
+const FILLER_H    = Math.round(FILLER_SIZE * 1.9);
+
+const TIE_X = CW / 2;
 const TIE_Y = 195;
 
-// ─── Fan layout ───────────────────────────────────────────────────────────────
+// ─── Layout helpers ───────────────────────────────────────────────────────────
 
-type FlowerPos = { hx: number; hy: number; angleDeg: number };
+type Pos = { hx: number; hy: number; angleDeg: number };
 
-function computePositions(n: number): FlowerPos[] {
+function computeFlowerPositions(n: number): Pos[] {
   if (n === 0) return [];
   const spread = Math.min(5 + n * 4, 25);
   return Array.from({ length: n }, (_, i) => {
-    const t = n === 1 ? 0 : (i / (n - 1)) * 2 - 1;  // -1 (left) → 0 (center) → 1 (right)
+    const t      = n === 1 ? 0 : (i / (n - 1)) * 2 - 1;
     const angleDeg = t * spread;
-    const rad = angleDeg * (Math.PI / 180);
-    // Dome: center flowers deepest (tallest), outer ones shallower (shorter)
-    const hy = TIE_Y + 88 + Math.round(22 * t * t);
-    return {
-      hx: TIE_X + Math.sin(rad) * 55,
-      hy,
-      angleDeg,
-    };
+    const rad    = angleDeg * (Math.PI / 180);
+    const hy     = TIE_Y + 88 + Math.round(22 * t * t);
+    return { hx: TIE_X + Math.sin(rad) * 55, hy, angleDeg };
   });
 }
 
-// ─── Back wrap — rendered BEFORE flowers (appears behind them) ────────────────
-// Only draws the fold-panel "ears" that extend ABOVE TIE_Y.
-// These are the paper flaps visible on the sides in the reference image.
-
-function WrapBack({ cx, topY, color }: { cx: number; topY: number; color: string }) {
-  const light  = lighten(color, 22);
-  const dark   = darken(color, 14);
-  const oc     = darken(color, 48);
-
-  return (
-    <g>
-      {/* Left fold panel — higher triangular flap on upper-left */}
-      <path
-        d={`M${cx - 82},${topY - 32} L${cx - 90},${topY} L${cx + 20},${topY} Z`}
-        fill={light} stroke={oc} strokeWidth="1.4" strokeLinejoin="round"
-      />
-      {/* Right fold panel — slightly lower flap on upper-right */}
-      <path
-        d={`M${cx + 70},${topY - 14} L${cx + 90},${topY} L${cx + 20},${topY} Z`}
-        fill={dark} opacity="0.82" stroke={oc} strokeWidth="1.2" strokeLinejoin="round"
-      />
-    </g>
-  );
+function computeFillerPositions(n: number): Pos[] {
+  if (n === 0) return [];
+  const spread = Math.min(10 + n * 8, 32);
+  return Array.from({ length: n }, (_, i) => {
+    const t      = n === 1 ? 0 : (i / (n - 1)) * 2 - 1;
+    const angleDeg = t * spread;
+    const rad    = angleDeg * (Math.PI / 180);
+    const hy     = TIE_Y + 78;
+    return { hx: TIE_X + Math.sin(rad) * 68, hy, angleDeg };
+  });
 }
 
-// ─── Front wrap — rendered AFTER flowers (covers lower stems) ─────────────────
-// Geometric paper cone (straight sides, fold panels) + large decorative bow.
-// Nothing here extends above topY, so stems are never cut.
+function fillerSrc(type: string): string {
+  if (type === "babysbreath") return BABYS_BREATH_IMAGE;
+  if (type === "lavender")    return LAVENDER_IMAGE;
+  return BABYS_BREATH_IMAGE;
+}
 
-function WrapFront({ cx, topY, color }: { cx: number; topY: number; color: string }) {
-  const knotY  = topY + 110;  // = 305
-  const botY   = topY + 218;  // = 413  paper tails end
-  const topW   = 88;           // half-width at opening
-  const botW   = 20;           // half-width at tie
-  const tailHW = 26;
-
-  const main   = color;
-  const light  = lighten(color, 22);
-  const dark   = darken(color, 14);
-  const shadow = darken(color, 28);
-  const oc     = darken(color, 48);
-
-  // Bow — always dusty rose to match the reference image aesthetic
-  const bow    = "#D4849A";
-  const bowLt  = lighten("#D4849A", 22);
-  const bowDk  = darken("#D4849A", 20);
-  const bowOc  = darken("#D4849A", 42);
-
-  // Straight-sided trapezoid (geometric, like the reference)
-  const cone = `M${cx - topW},${topY} L${cx + topW},${topY} L${cx + botW},${knotY} L${cx - botW},${knotY} Z`;
-
-  // Paper tails below the bow tie
-  const tails =
-    `M${cx - botW},${knotY} ` +
-    `C${cx - tailHW - 4},${knotY + 26} ${cx - tailHW},${botY - 12} ${cx - tailHW + 5},${botY} ` +
-    `L${cx + tailHW - 5},${botY} ` +
-    `C${cx + tailHW},${botY - 12} ${cx + tailHW + 4},${knotY + 26} ${cx + botW},${knotY} Z`;
-
-  return (
-    <g>
-      {/* Drop shadow */}
-      <path d={cone}  fill={shadow} opacity="0.11" transform="translate(6,7)"/>
-      <path d={tails} fill={shadow} opacity="0.09" transform="translate(6,7)"/>
-
-      {/* Paper tails — back layer */}
-      <path d={tails} fill={dark} opacity="0.74"/>
-      {/* Right tail lighter (front panel) */}
-      <path
-        d={`M${cx},${knotY} L${cx},${botY} L${cx + tailHW - 5},${botY} C${cx + tailHW + 4},${botY - 12} ${cx + tailHW},${knotY + 26} L${cx + botW},${knotY} Z`}
-        fill={light} opacity="0.80"
-      />
-
-      {/* Main cone body */}
-      <path d={cone} fill={main} stroke={oc} strokeWidth="1.8" strokeLinejoin="round"/>
-
-      {/* Right panel — slightly darker, shows the fold-over from the right */}
-      <path
-        d={`M${cx + 20},${topY} L${cx + topW},${topY} L${cx + botW},${knotY} L${cx + botW - 5},${knotY} L${cx + 32},${topY} Z`}
-        fill={dark} opacity="0.40"
-      />
-
-      {/* Left light strip — catches light on the left face */}
-      <path
-        d={`M${cx - topW},${topY} L${cx - topW + 18},${topY} L${cx - botW + 4},${knotY} L${cx - botW},${knotY} Z`}
-        fill={light} opacity="0.32"
-      />
-
-      {/* Fold crease lines */}
-      <line x1={cx - topW} y1={topY} x2={cx - botW}     y2={knotY} stroke={oc} strokeWidth="1.0" opacity="0.28"/>
-      <line x1={cx + 20}   y1={topY} x2={cx + botW - 2} y2={knotY} stroke={oc} strokeWidth="0.9" opacity="0.25"/>
-      <line x1={cx + topW} y1={topY} x2={cx + botW}     y2={knotY} stroke={oc} strokeWidth="1.0" opacity="0.22"/>
-
-      {/* ── Large decorative bow ── */}
-
-      {/* Left bow loop */}
-      <path
-        d={`M${cx - 4},${knotY} C${cx - 6},${knotY - 30} ${cx - 72},${knotY - 46} ${cx - 72},${knotY} C${cx - 72},${knotY + 46} ${cx - 6},${knotY + 30} ${cx - 4},${knotY} Z`}
-        fill={bow} stroke={bowOc} strokeWidth="1.3"
-      />
-      {/* Left loop highlight */}
-      <path
-        d={`M${cx - 8},${knotY} C${cx - 10},${knotY - 20} ${cx - 54},${knotY - 32} ${cx - 54},${knotY} C${cx - 54},${knotY + 32} ${cx - 10},${knotY + 20} ${cx - 8},${knotY} Z`}
-        fill={bowLt} opacity="0.38"
-      />
-      {/* Left loop inner crease */}
-      <path
-        d={`M${cx - 4},${knotY - 4} C${cx - 24},${knotY - 14} ${cx - 55},${knotY - 12} ${cx - 60},${knotY}`}
-        fill="none" stroke={bowDk} strokeWidth="0.9" opacity="0.45"
-      />
-
-      {/* Right bow loop */}
-      <path
-        d={`M${cx + 4},${knotY} C${cx + 6},${knotY - 30} ${cx + 72},${knotY - 46} ${cx + 72},${knotY} C${cx + 72},${knotY + 46} ${cx + 6},${knotY + 30} ${cx + 4},${knotY} Z`}
-        fill={bowLt} stroke={bowOc} strokeWidth="1.3"
-      />
-      {/* Right loop shadow */}
-      <path
-        d={`M${cx + 8},${knotY} C${cx + 10},${knotY - 20} ${cx + 54},${knotY - 32} ${cx + 54},${knotY} C${cx + 54},${knotY + 32} ${cx + 10},${knotY + 20} ${cx + 8},${knotY} Z`}
-        fill={bowDk} opacity="0.22"
-      />
-      {/* Right loop inner crease */}
-      <path
-        d={`M${cx + 4},${knotY - 4} C${cx + 24},${knotY - 14} ${cx + 55},${knotY - 12} ${cx + 60},${knotY}`}
-        fill="none" stroke={bowDk} strokeWidth="0.9" opacity="0.38"
-      />
-
-      {/* Ribbon tails streaming down */}
-      <path d={`M${cx - 6},${knotY + 8} C${cx - 24},${knotY + 36} ${cx - 32},${knotY + 68} ${cx - 24},${knotY + 92}`} fill="none" stroke={bow}   strokeWidth="9"   strokeLinecap="round"/>
-      <path d={`M${cx - 6},${knotY + 8} C${cx - 22},${knotY + 34} ${cx - 28},${knotY + 64} ${cx - 20},${knotY + 88}`} fill="none" stroke={bowLt} strokeWidth="4.5" strokeLinecap="round"/>
-      <path d={`M${cx + 6},${knotY + 8} C${cx + 26},${knotY + 34} ${cx + 34},${knotY + 66} ${cx + 26},${knotY + 90}`} fill="none" stroke={bow}   strokeWidth="9"   strokeLinecap="round"/>
-      <path d={`M${cx + 6},${knotY + 8} C${cx + 24},${knotY + 32} ${cx + 30},${knotY + 62} ${cx + 22},${knotY + 86}`} fill="none" stroke={bowLt} strokeWidth="4.5" strokeLinecap="round"/>
-
-      {/* Center bow knot */}
-      <ellipse cx={cx} cy={knotY} rx={14} ry={10} fill={bow}   stroke={bowOc} strokeWidth="1.3"/>
-      <ellipse cx={cx} cy={knotY} rx={8}  ry={5.5} fill={bowLt} opacity="0.55"/>
-    </g>
-  );
+function flowerSrc(type: string, color: string): string {
+  if (type === "rose")      return getRoseImage(color);
+  if (type === "peony")     return getPeonyImage(color);
+  if (type === "lily")      return getLilyImage(color);
+  if (type === "sunflower") return SUNFLOWER_IMAGE;
+  return getRoseImage(color);
 }
 
 // ─── Canvas ───────────────────────────────────────────────────────────────────
@@ -182,77 +73,98 @@ function WrapFront({ cx, topY, color }: { cx: number; topY: number; color: strin
 export default function BouquetCanvas({ bouquet, width = CW }: Props) {
   const height = Math.round(width * (CH / CW));
 
-  const expanded = useMemo(
+  const expandedFlowers = useMemo(
     () => bouquet.flowers.flatMap((f) => Array.from({ length: f.count }, () => f)),
     [bouquet.flowers]
   );
 
-  const positions = useMemo(
-    () => computePositions(expanded.length),
-    [expanded.length]
+  const expandedFillers = useMemo(
+    () => bouquet.fillers.flatMap((f) => Array.from({ length: f.count }, () => f)),
+    [bouquet.fillers]
   );
 
-  // Rose → actual PNG file; all other flowers → generated SVG data URI
-  const flowerSrcs = useMemo(
-    () =>
-      expanded.map((f) => {
-        if (f.type === "rose")      return getRoseImage(f.color);
-        if (f.type === "sunflower") return SUNFLOWER_IMAGE;
-        return `data:image/svg+xml,${encodeURIComponent(
-          drawFlower(f.type as FlowerType, bouquet.artStyle as ArtStyle, f.color, FLOWER_SIZE)
-        )}`;
-      }),
-    [expanded, bouquet.artStyle]
-  );
+  const flowerPositions = useMemo(() => computeFlowerPositions(expandedFlowers.length), [expandedFlowers.length]);
+  const fillerPositions = useMemo(() => computeFillerPositions(expandedFillers.length), [expandedFillers.length]);
+
+  // Outside-first render order so center flowers appear on top
+  const flowerRenderOrder = useMemo(() => {
+    const n = expandedFlowers.length;
+    return Array.from({ length: n }, (_, i) => i).sort((a, b) => {
+      const ta = n <= 1 ? 0 : Math.abs((a / (n - 1)) * 2 - 1);
+      const tb = n <= 1 ? 0 : Math.abs((b / (n - 1)) * 2 - 1);
+      return tb - ta;
+    });
+  }, [expandedFlowers.length]);
+
+  const wrapSrc = WRAP_IMAGES[bouquet.wrap.image];
+
+  const isEmpty = bouquet.flowers.length === 0 && bouquet.fillers.length === 0;
 
   return (
     <svg viewBox={`0 0 ${CW} ${CH}`} width={width} height={height} xmlns="http://www.w3.org/2000/svg">
       <defs>
+        {/* Clips flowers/fillers so stems don't bleed below the wrap opening */}
         <clipPath id="flower-clip">
           <rect x={0} y={0} width={CW} height={TIE_Y + 5} />
         </clipPath>
       </defs>
-      <rect width={CW} height={CH} fill="#FDF6EF"/>
 
-      {/* Back fold panels — behind flowers */}
-      <WrapBack cx={TIE_X} topY={TIE_Y} color={bouquet.wrap.color}/>
+      <rect width={CW} height={CH} fill="#FDF6EF" />
 
-      {/* No SVG stems — stems are part of the flower PNG images */}
-
-      {/* Flowers — outer first so center flowers render on top; clipped at wrap opening */}
+      {/* Fillers — behind everything */}
       <g clipPath="url(#flower-clip)">
-        {Array.from({ length: flowerSrcs.length }, (_, i) => i)
-          .sort((a, b) => {
-            const n = flowerSrcs.length;
-            const ta = n <= 1 ? 0 : Math.abs((a / (n - 1)) * 2 - 1);
-            const tb = n <= 1 ? 0 : Math.abs((b / (n - 1)) * 2 - 1);
-            return tb - ta; // outer (|t| large) first, center last → center on top
-          })
-          .map((i) => {
-            const src = flowerSrcs[i];
-            const p = positions[i];
-            return (
-              <image
-                key={`flower-${i}`}
-                href={src}
-                x={p.hx - FLOWER_SIZE / 2}
-                y={p.hy - FLOWER_H}
-                width={FLOWER_SIZE}
-                height={FLOWER_H}
-                transform={`rotate(${p.angleDeg}, ${p.hx}, ${p.hy})`}
-                preserveAspectRatio="xMidYMax meet"
-              />
-            );
-          })}
+        {fillerPositions.map((p, i) => (
+          <image
+            key={`filler-${i}`}
+            href={fillerSrc(expandedFillers[i].type)}
+            x={p.hx - FILLER_SIZE / 2}
+            y={p.hy - FILLER_H}
+            width={FILLER_SIZE}
+            height={FILLER_H}
+            transform={`rotate(${p.angleDeg}, ${p.hx}, ${p.hy})`}
+            preserveAspectRatio="xMidYMax meet"
+          />
+        ))}
       </g>
 
-      {/* Front cone + bow — in front of everything */}
-      <WrapFront cx={TIE_X} topY={TIE_Y} color={bouquet.wrap.color}/>
+      {/* Main flowers — outer renders first, center on top */}
+      <g clipPath="url(#flower-clip)">
+        {flowerRenderOrder.map((i) => {
+          const f = expandedFlowers[i];
+          const p = flowerPositions[i];
+          return (
+            <image
+              key={`flower-${i}`}
+              href={flowerSrc(f.type, f.color)}
+              x={p.hx - FLOWER_SIZE / 2}
+              y={p.hy - FLOWER_H}
+              width={FLOWER_SIZE}
+              height={FLOWER_H}
+              transform={`rotate(${p.angleDeg}, ${p.hx}, ${p.hy})`}
+              preserveAspectRatio="xMidYMax meet"
+            />
+          );
+        })}
+      </g>
 
-      {bouquet.flowers.length === 0 && (
+      {/* Wrap image — in front of stems, behind flower heads */}
+      <image
+        href={wrapSrc}
+        x={(CW - 280) / 2}
+        y={TIE_Y - 30}
+        width={280}
+        height={CH - TIE_Y + 30}
+        preserveAspectRatio="xMidYMin meet"
+      />
+
+      {isEmpty && (
         <>
-          <text x={CW/2} y={CH/2-24} textAnchor="middle" fill="#C9856A" fontFamily="Georgia, serif" fontSize="15" opacity="0.72">Add flowers to begin</text>
-          <text x={CW/2} y={CH/2}    textAnchor="middle" fill="#C9856A" fontFamily="Georgia, serif" fontSize="12" opacity="0.45">your bouquet</text>
+          <text x={CW / 2} y={CH / 2 - 24} textAnchor="middle" fill="#C9856A" fontFamily="Georgia, serif" fontSize="15" opacity="0.72">
+            Add flowers to begin
+          </text>
+          <text x={CW / 2} y={CH / 2} textAnchor="middle" fill="#C9856A" fontFamily="Georgia, serif" fontSize="12" opacity="0.45">
+            your bouquet
+          </text>
         </>
       )}
     </svg>
